@@ -45,12 +45,12 @@ models:
 
   - name: gemma-4-31b
     provider: openrouter
-    model_id: google/gemma-4-31b-it:free
+    model_id: google/gemma-4-31b-it
     model_group: general
-    is_free: true
-    price_input_per_million_usd: null
-    price_output_per_million_usd: null
-    notes: "General-purpose, not Chinese-specialized."
+    is_free: false
+    price_input_per_million_usd: 0.09
+    price_output_per_million_usd: 0.34
+    notes: "General-purpose, not Chinese-specialized. Deliberately run on the paid tier (identical model_id/weights to the :free variant, just without free-tier rate limiting/routing) so it isn't the only model on a different serving tier from the rest of the roster -- avoids a free-vs-paid confound if it underperforms."
 
   - name: mistral-small-3-24b
     provider: openrouter
@@ -85,12 +85,13 @@ decoding:
 rate_limit:
   requests_per_minute: 20
 
-# Cost guard for paid models (now 4 of 6: deepseek-v3, deepseek-r1-0528,
-# qwen3-next-80b, mistral-small-3-24b, plus gemini-3-flash-preview). The runner
-# estimates cost before each call and refuses to continue once the running total
-# would exceed this, so a bug/retry-loop can't silently rack up a bill. A full
-# 108-item x 5-paid-model pass is estimated at well under $1 (deepseek-r1-0528's
-# reasoning tokens are the main source of uncertainty), so $3 leaves headroom for
+# Cost guard for paid models -- all 6 are now paid (deepseek-v3, deepseek-r1-0528,
+# qwen3-next-80b, mistral-small-3-24b, gemma-4-31b, gemini-3-flash-preview), so
+# every roster model runs on the same serving tier. The runner estimates cost
+# before each call and refuses to continue once the running total would exceed
+# this, so a bug/retry-loop can't silently rack up a bill. A full 108-item x
+# 6-model pass is estimated at well under $1 (deepseek-r1-0528's reasoning
+# tokens are the main source of uncertainty), so $3 leaves headroom for
 # retries/reruns without being reckless against the $10 balance.
 cost_guard:
   max_cost_usd: 3.00
