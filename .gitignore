@@ -216,3 +216,8 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Module 4 run outputs (generated, not source -- includes smoke-test/fake-data
+# results and real model outputs from local runs; real results meant for the
+# final deliverable should be added deliberately, not swept in wholesale)
+output/
