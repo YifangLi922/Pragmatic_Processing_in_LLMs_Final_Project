@@ -1,0 +1,102 @@
+[
+  {
+    "item_id": "F00_bare",
+    "family_id": "F00",
+    "particle_condition": "bare",
+    "context": "你和同事老张在茶水间偶遇，你提到明天有个紧急会议想找同事小陈签字，老张接话：",
+    "sentence": "他明天要出差",
+    "question": "老张说这句话，最可能是在做什么？",
+    "options": {
+      "A": "老张比较确定小陈明天要出差，是在告诉你这件事。",
+      "B": "老张倾向认为小陈明天要出差，但不完全确定，想让你确认。",
+      "C": "老张只是在向你询问小陈明天是否要出差，没有明显倾向。",
+      "D": "老张在建议你们提前把签字的事情安排好。"
+    },
+    "option_semantics": {
+      "A": "statement",
+      "B": "confirmation",
+      "C": "neutral",
+      "D": "distractor"
+    }
+  },
+  {
+    "item_id": "F00_ba",
+    "family_id": "F00",
+    "particle_condition": "ba",
+    "context": "你和同事老张在茶水间偶遇，你提到明天有个紧急会议想找同事小陈签字，老张接话：",
+    "sentence": "他明天要出差吧",
+    "question": "老张说这句话，最可能是在做什么？",
+    "options": {
+      "A": "老张倾向认为小陈明天要出差，但不完全确定，想让你确认。",
+      "B": "老张在建议你们提前把签字的事情安排好。",
+      "C": "老张比较确定小陈明天要出差，是在告诉你这件事。",
+      "D": "老张只是在向你询问小陈明天是否要出差，没有明显倾向。"
+    },
+    "option_semantics": {
+      "A": "confirmation",
+      "B": "distractor",
+      "C": "statement",
+      "D": "neutral"
+    }
+  },
+  {
+    "item_id": "F00_ma",
+    "family_id": "F00",
+    "particle_condition": "ma",
+    "context": "你和同事老张在茶水间偶遇，你提到明天有个紧急会议想找同事小陈签字，老张接话：",
+    "sentence": "他明天要出差吗",
+    "question": "老张说这句话，最可能是在做什么？",
+    "options": {
+      "A": "老张只是在向你询问小陈明天是否要出差，没有明显倾向。",
+      "B": "老张比较确定小陈明天要出差，是在告诉你这件事。",
+      "C": "老张倾向认为小陈明天要出差，但不完全确定，想让你确认。",
+      "D": "老张在建议你们提前把签字的事情安排好。"
+    },
+    "option_semantics": {
+      "A": "neutral",
+      "B": "statement",
+      "C": "confirmation",
+      "D": "distractor"
+    }
+  },
+  {
+    "item_id": "F01_bare",
+    "family_id": "F01",
+    "particle_condition": "bare",
+    "context": "你和朋友小林路过一家咖啡馆，你想周末约人在这里见面，小林说：",
+    "sentence": "这家咖啡馆周末不营业",
+    "question": "小林说这句话，最可能是在做什么？",
+    "options": {
+      "A": "小林在建议你们换一家店见面。",
+      "B": "小林倾向认为周末不营业，但不确定，想让你确认。",
+      "C": "小林比较确定这家店周末不营业，是在告诉你。",
+      "D": "小林只是在问这家店周末是否营业，没有明显倾向。"
+    },
+    "option_semantics": {
+      "A": "distractor",
+      "B": "confirmation",
+      "C": "statement",
+      "D": "neutral"
+    }
+  },
+  {
+    "item_id": "F01_ba",
+    "family_id": "F01",
+    "particle_condition": "ba",
+    "context": "你和朋友小林路过一家咖啡馆，你想周末约人在这里见面，小林说：",
+    "sentence": "这家咖啡馆周末不营业吧",
+    "question": "小林说这句话，最可能是在做什么？",
+    "options": {
+      "A": "小林比较确定这家店周末不营业，是在告诉你。",
+      "B": "小林只是在问这家店周末是否营业，没有明显倾向。",
+      "C": "小林在建议你们换一家店见面。",
+      "D": "小林倾向认为周末不营业，但不确定，想让你确认。"
+    },
+    "option_semantics": {
+      "A": "statement",
+      "B": "neutral",
+      "C": "distractor",
+      "D": "confirmation"
+    }
+  }
+]

@@ -1,0 +1,178 @@
+import json
+from pathlib import Path
+
+import pytest
+
+from src.llm_query.cost_guard import CostGuard
+from src.llm_query.parser import parse_answer
+from src.llm_query.prompt import build_prompt
+from src.llm_query.providers.mock import MockProvider
+from src.llm_query.runner import load_done_keys, run
+
+FAKE_ITEMS_PATH = Path(__file__).resolve().parents[1] / "data" / "fake_items.json"
+
+
+def _sample_item():
+    return {
+        "item_id": "F00_bare",
+        "family_id": "F00",
+        "particle_condition": "bare",
+        "context": "情景内容",
+        "sentence": "他明天要出差",
+        "question": "问题内容",
+        "options": {"A": "选项A", "B": "选项B", "C": "选项C", "D": "选项D"},
+        "option_semantics": {"A": "statement", "B": "confirmation", "C": "neutral", "D": "distractor"},
+    }
+
+
+# ---- prompt.py ----------------------------------------------------------
+
+def test_build_prompt_fills_all_fields():
+    prompt = build_prompt(_sample_item())
+    assert "情景：情景内容" in prompt
+    assert '句子："他明天要出差"' in prompt
+    assert "问题：问题内容" in prompt
+    assert "A) 选项A" in prompt
+    assert "D) 选项D" in prompt
+    assert prompt.rstrip().endswith("答案：")
+
+
+# ---- parser.py ------------------------------------------------------------
+
+@pytest.mark.parametrize(
+    "raw,expected",
+    [
+        ("A", "A"),
+        ("B)", "B"),
+        ("C) 这是理由", "C"),
+        ("答案：D", "D"),
+        ("答案是B。", "B"),
+        ("答案为 C", "C"),
+        ("我选A", "A"),
+        ("我觉得选项C比较合适", "C"),
+        ("The answer is A.", "A"),
+        ("经过分析，说话人更像是在确认，所以答案应该是 B", "B"),
+        ("**A**", "A"),
+        ("根据语境，最合适的是 (D)", "D"),
+        ("我不确定选哪个", None),
+        ("", None),
+        ("   ", None),
+    ],
+)
+def test_parse_answer_variants(raw, expected):
+    assert parse_answer(raw) == expected
+
+
+def test_parse_answer_does_not_match_word_starting_with_letter():
+    assert parse_answer("According to the context, the speaker is asking.") is None
+
+
+# ---- providers/mock.py -----------------------------------------------------
+
+def test_mock_provider_is_deterministic():
+    provider = MockProvider()
+    r1 = provider.call("model-x", "some prompt")
+    r2 = provider.call("model-x", "some prompt")
+    assert r1.raw_response == r2.raw_response
+    assert parse_answer(r1.raw_response) in {"A", "B", "C", "D"}
+
+
+def test_mock_provider_can_simulate_failure():
+    provider = MockProvider(fail_on_substrings=("F00_bare",))
+    r = provider.call("model-x", "prompt containing F00_bare marker")
+    assert r.error is not None
+    assert r.raw_response == ""
+
+
+# ---- cost_guard.py ----------------------------------------------------------
+
+def test_cost_guard_blocks_once_budget_exhausted():
+    guard = CostGuard(max_cost_usd=0.0000001)
+    model_cfg = {"price_input_per_million_usd": 0.50, "price_output_per_million_usd": 3.00}
+    estimated = guard.estimate(model_cfg, prompt="x" * 1000)
+    assert estimated > 0
+    assert guard.can_spend(estimated) is False
+
+
+def test_cost_guard_allows_free_style_zero_price():
+    guard = CostGuard(max_cost_usd=1.0)
+    model_cfg = {"price_input_per_million_usd": None, "price_output_per_million_usd": None}
+    estimated = guard.estimate(model_cfg, prompt="x" * 1000)
+    assert estimated == 0.0
+    assert guard.can_spend(estimated) is True
+
+
+# ---- runner.py (end-to-end smoke test with MockProvider) --------------------
+
+def _mock_factory(model_cfg):
+    return MockProvider()
+
+
+def test_runner_smoke_creates_one_record_per_item(tmp_path):
+    output_path = tmp_path / "results.jsonl"
+    run(
+        items_path=FAKE_ITEMS_PATH,
+        output_path=output_path,
+        model_names=["deepseek-v3"],
+        provider_factory=_mock_factory,
+        sleep_fn=lambda seconds: None,
+    )
+
+    lines = output_path.read_text(encoding="utf-8").strip().splitlines()
+    records = [json.loads(line) for line in lines]
+    assert len(records) == 5  # 5 fake items x 1 model
+    assert all(r["model_name"] == "deepseek-v3" for r in records)
+    assert all(r["model_answer_letter"] in {"A", "B", "C", "D"} for r in records)
+    assert all(r["model_answer_semantic"] is not None for r in records)
+    assert all(r["error"] is None for r in records)
+
+
+def test_runner_resume_skips_already_successful_pairs(tmp_path):
+    output_path = tmp_path / "results.jsonl"
+    call_log = []
+
+    class CountingMockProvider(MockProvider):
+        def call(self, model_id, prompt, temperature=0.0):
+            call_log.append((model_id, prompt))
+            return super().call(model_id, prompt, temperature)
+
+    factory = lambda model_cfg: CountingMockProvider()
+
+    run(items_path=FAKE_ITEMS_PATH, output_path=output_path, model_names=["deepseek-v3"],
+        provider_factory=factory, sleep_fn=lambda s: None)
+    assert len(call_log) == 5
+
+    # Second run over the same output file should be a no-op: every pair
+    # already has a successful record, so nothing new gets called.
+    run(items_path=FAKE_ITEMS_PATH, output_path=output_path, model_names=["deepseek-v3"],
+        provider_factory=factory, sleep_fn=lambda s: None)
+    assert len(call_log) == 5
+
+    done = load_done_keys(output_path)
+    assert len(done) == 5
+
+
+def test_runner_retries_failed_pair_on_resume(tmp_path):
+    output_path = tmp_path / "results.jsonl"
+
+    # F00_bare is the only item whose prompt contains this exact quoted
+    # sentence (F00_ba/F00_ma have the same sentence plus a trailing particle,
+    # so the closing quote never immediately follows "出差" for them).
+    failing_factory = lambda model_cfg: MockProvider(fail_on_substrings=('"他明天要出差"',))
+    run(items_path=FAKE_ITEMS_PATH, output_path=output_path, model_names=["deepseek-v3"],
+        provider_factory=failing_factory, sleep_fn=lambda s: None)
+
+    records = [json.loads(line) for line in output_path.read_text(encoding="utf-8").strip().splitlines()]
+    assert len(records) == 5
+    failed = [r for r in records if r["item_id"] == "F00_bare"]
+    assert len(failed) == 1
+    assert failed[0]["error"] is not None
+    assert len(load_done_keys(output_path)) == 4  # 4 succeeded, 1 failed
+
+    succeeding_factory = lambda model_cfg: MockProvider()
+    run(items_path=FAKE_ITEMS_PATH, output_path=output_path, model_names=["deepseek-v3"],
+        provider_factory=succeeding_factory, sleep_fn=lambda s: None)
+
+    records = [json.loads(line) for line in output_path.read_text(encoding="utf-8").strip().splitlines()]
+    assert len(records) == 6  # the retry appends a new line rather than rewriting
+    assert len(load_done_keys(output_path)) == 5  # all 5 items now have a successful record

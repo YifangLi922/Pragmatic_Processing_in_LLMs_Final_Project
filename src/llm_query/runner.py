@@ -1,0 +1,169 @@
+"""Runner for Module 4 (LLM querying).
+
+Iterates every (item, model) pair, calls the configured provider, parses the
+answer, and appends each result as one line to a JSONL checkpoint file. A
+run that gets interrupted (crash, rate limit, ctrl-c) can simply be started
+again: pairs that already have a successful recorded result are skipped, so
+no API quota or money is spent twice.
+"""
+
+import datetime as _dt
+import json
+import time
+from pathlib import Path
+
+from .config import load_config
+from .cost_guard import CostGuard
+from .parser import parse_answer
+from .prompt import build_prompt
+from .providers.base import LLMResponse, Provider
+
+
+def load_items(path: Path | str) -> list[dict]:
+    with open(path, encoding="utf-8") as f:
+        return json.load(f)
+
+
+def load_done_keys(output_path: Path | str) -> set[tuple[str, str]]:
+    """(item_id, model_name) pairs that already have a *successful* result."""
+    done: set[tuple[str, str]] = set()
+    path = Path(output_path)
+    if not path.exists():
+        return done
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            record = json.loads(line)
+            if record.get("error") is None:
+                done.add((record["item_id"], record["model_name"]))
+    return done
+
+
+def _build_record(
+    item: dict,
+    model_cfg: dict,
+    prompt: str,
+    run_date: str,
+    temperature: float,
+    response: LLMResponse,
+    answer_letter: str | None,
+) -> dict:
+    option_semantics = item.get("option_semantics", {})
+    logprobs = response.logprobs or {}
+    return {
+        "model_name": model_cfg["name"],
+        "model_provider": model_cfg["provider"],
+        "model_group": model_cfg["model_group"],
+        "run_date": run_date,
+        "temperature": temperature,
+        "item_id": item["item_id"],
+        "family_id": item.get("family_id"),
+        "particle_condition": item.get("particle_condition"),
+        "model_answer_letter": answer_letter,
+        "model_answer_semantic": option_semantics.get(answer_letter) if answer_letter else None,
+        "logprob_A": logprobs.get("A"),
+        "logprob_B": logprobs.get("B"),
+        "logprob_C": logprobs.get("C"),
+        "logprob_D": logprobs.get("D"),
+        "raw_response": response.raw_response,
+        "prompt_tokens": response.prompt_tokens,
+        "completion_tokens": response.completion_tokens,
+        "prompt": prompt,
+        "error": response.error,
+    }
+
+
+def run(
+    items_path: Path | str,
+    output_path: Path | str,
+    model_names: list[str] | None = None,
+    config_path: Path | str | None = None,
+    provider_factory=None,
+    run_date: str | None = None,
+    sleep_fn=time.sleep,
+) -> Path:
+    """Run every (item, model) pair not already successfully recorded.
+
+    `provider_factory(model_cfg) -> Provider` builds one provider instance
+    per model (so tests can pass a MockProvider); defaults to a real
+    OpenRouterProvider, built lazily so a mock-only smoke test never needs
+    OPENROUTER_API_KEY to be set.
+    """
+    config = load_config(config_path) if config_path else load_config()
+    items = load_items(items_path)
+    models = config["models"]
+    if model_names is not None:
+        models = [m for m in models if m["name"] in model_names]
+
+    requests_per_minute = config.get("rate_limit", {}).get("requests_per_minute", 20)
+    min_interval_seconds = 60.0 / requests_per_minute
+    temperature = config.get("decoding", {}).get("temperature", 0.0)
+    cost_guard = CostGuard(max_cost_usd=config.get("cost_guard", {}).get("max_cost_usd", 1.0))
+    run_date = run_date or _dt.date.today().isoformat()
+
+    if provider_factory is None:
+        def provider_factory(model_cfg: dict) -> Provider:
+            from .providers.openrouter import OpenRouterProvider
+
+            return OpenRouterProvider()
+
+    done = load_done_keys(output_path)
+    providers_by_model: dict[str, Provider] = {}
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, "a", encoding="utf-8") as out_f:
+        for model_cfg in models:
+            model_name = model_cfg["name"]
+            if model_name not in providers_by_model:
+                providers_by_model[model_name] = provider_factory(model_cfg)
+            provider = providers_by_model[model_name]
+            is_free = model_cfg.get("is_free", True)
+
+            for item in items:
+                key = (item["item_id"], model_name)
+                if key in done:
+                    continue
+
+                prompt = build_prompt(item)
+
+                if not is_free:
+                    estimated = cost_guard.estimate(model_cfg, prompt)
+                    if not cost_guard.can_spend(estimated):
+                        blocked = LLMResponse(
+                            raw_response="",
+                            logprobs=None,
+                            prompt_tokens=None,
+                            completion_tokens=None,
+                            error=(
+                                f"cost guard: would exceed max_cost_usd={cost_guard.max_cost_usd} "
+                                f"(spent so far ${cost_guard.spent_usd:.4f})"
+                            ),
+                        )
+                        record = _build_record(item, model_cfg, prompt, run_date, temperature,
+                                                blocked, answer_letter=None)
+                        out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                        out_f.flush()
+                        continue
+
+                start = time.monotonic()
+                response = provider.call(model_id=model_cfg["model_id"], prompt=prompt,
+                                          temperature=temperature)
+
+                if response.error is None and not is_free:
+                    cost_guard.record_actual(model_cfg, response)
+
+                answer_letter = parse_answer(response.raw_response) if response.error is None else None
+                record = _build_record(item, model_cfg, prompt, run_date, temperature,
+                                        response, answer_letter)
+                out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
+                out_f.flush()
+
+                elapsed = time.monotonic() - start
+                remaining = min_interval_seconds - elapsed
+                if remaining > 0:
+                    sleep_fn(remaining)
+
+    return output_path
