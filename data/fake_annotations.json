@@ -1,0 +1,96 @@
+[
+  {"item_id": "FA_bare", "family_id": "FA", "particle_condition": "bare", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "statement", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FA_ba", "family_id": "FA", "particle_condition": "ba", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 1, "hesitation_reason": "在confirmation和neutral之间犹豫", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FA_ma", "family_id": "FA", "particle_condition": "ma", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "neutral", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "neutral", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "confirmation", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+
+  {"item_id": "FB_bare", "family_id": "FB", "particle_condition": "bare", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FB_ba", "family_id": "FB", "particle_condition": "ba", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "statement", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "statement", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "statement", "naturalness": 4, "hesitation": 1, "hesitation_reason": "吧读起来也很像陈述", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FB_ma", "family_id": "FB", "particle_condition": "ma", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "neutral", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+
+  {"item_id": "FC_bare", "family_id": "FC", "particle_condition": "bare", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "statement", "naturalness": 4, "hesitation": 1, "hesitation_reason": "不确定算陈述还是确认", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "statement", "naturalness": 4, "hesitation": 1, "hesitation_reason": "不确定算陈述还是确认", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FC_ba", "family_id": "FC", "particle_condition": "ba", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FC_ma", "family_id": "FC", "particle_condition": "ma", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "neutral", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "neutral", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "distractor", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 1}
+  ]},
+
+  {"item_id": "FD_bare", "family_id": "FD", "particle_condition": "bare", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FD_ba", "family_id": "FD", "particle_condition": "ba", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "confirmation", "naturalness": 3, "hesitation": 1, "hesitation_reason": "吧在这里听起来很别扭", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "confirmation", "naturalness": 3, "hesitation": 1, "hesitation_reason": "吧在这里听起来很别扭", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "confirmation", "naturalness": 2, "hesitation": 1, "hesitation_reason": "这句加吧完全不自然", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "confirmation", "naturalness": 3, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FD_ma", "family_id": "FD", "particle_condition": "ma", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "neutral", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+
+  {"item_id": "FE_bare", "family_id": "FE", "particle_condition": "bare", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "statement", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "statement", "naturalness": 4, "hesitation": 1, "hesitation_reason": "也有点像confirmation", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FE_ba", "family_id": "FE", "particle_condition": "ba", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "confirmation", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "confirmation", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]},
+  {"item_id": "FE_ma", "family_id": "FE", "particle_condition": "ma", "annotations": [
+    {"annotator_id": "A1", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A2", "answer_semantic": "neutral", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A3", "answer_semantic": "neutral", "naturalness": 4, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0},
+    {"annotator_id": "A4", "answer_semantic": "statement", "naturalness": 5, "hesitation": 0, "hesitation_reason": "", "no_valid_option": 0}
+  ]}
+]
