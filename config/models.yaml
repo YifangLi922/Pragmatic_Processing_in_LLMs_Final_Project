@@ -1,0 +1,92 @@
+# Model roster for Module 4 (LLM querying).
+# All models are called through OpenRouter's unified OpenAI-compatible API,
+# so adding/removing/swapping a model only means editing this file --
+# no code changes needed in src/llm_query/.
+#
+# Fields:
+#   name            human-readable label used in output files (model_name column)
+#   provider        which client in src/llm_query/providers/ to use ("openrouter" or "mock")
+#   model_id        exact OpenRouter model slug (goes straight into the API request)
+#   model_group     descriptive family grouping for analysis (chinese_strong / general)
+#   is_free         true = OpenRouter ":free" tier (daily/minute rate limits apply,
+#                   see rate_limit section below); false = billed against OpenRouter credits
+#   price_input_per_million_usd / price_output_per_million_usd
+#                   only meaningful when is_free is false; used by the cost guard
+#                   to estimate spend before/while running. Leave null for free models.
+#   notes           why this model was picked (for README / methods section reuse)
+
+models:
+  - name: deepseek-v3
+    provider: openrouter
+    model_id: deepseek/deepseek-chat:free
+    model_group: chinese_strong
+    is_free: true
+    price_input_per_million_usd: null
+    price_output_per_million_usd: null
+    notes: "DeepSeek non-reasoning flagship; direct-answer setting matches task format."
+
+  - name: deepseek-r1-0528
+    provider: openrouter
+    model_id: deepseek/deepseek-r1-0528:free
+    model_group: chinese_strong
+    is_free: true
+    price_input_per_million_usd: null
+    price_output_per_million_usd: null
+    notes: "DeepSeek reasoning flagship; lets us check whether explicit CoT changes particle sensitivity."
+
+  - name: qwen3-next-80b
+    provider: openrouter
+    model_id: qwen/qwen3-next-80b-a3b-instruct:free
+    model_group: chinese_strong
+    is_free: true
+    price_input_per_million_usd: null
+    price_output_per_million_usd: null
+    notes: "Alibaba native-Chinese model, different vendor/architecture from DeepSeek."
+
+  - name: gemma-4-31b
+    provider: openrouter
+    model_id: google/gemma-4-31b-it:free
+    model_group: general
+    is_free: true
+    price_input_per_million_usd: null
+    price_output_per_million_usd: null
+    notes: "General-purpose, not Chinese-specialized."
+
+  - name: mistral-small-3-24b
+    provider: openrouter
+    model_id: mistralai/mistral-small-3-24b-instruct-2501:free
+    model_group: general
+    is_free: true
+    price_input_per_million_usd: null
+    price_output_per_million_usd: null
+    notes: "General-purpose, European vendor, distinct training corpus from Chinese-strong group."
+
+  - name: gemini-3-flash-preview
+    provider: openrouter
+    model_id: google/gemini-3-flash-preview
+    model_group: general
+    is_free: false
+    price_input_per_million_usd: 0.50
+    price_output_per_million_usd: 3.00
+    notes: "Paid but cheap (~$0.03 for a full 108-item pass); strongest general-purpose candidate available."
+
+# Decoding config applied to every model unless overridden per-run.
+decoding:
+  temperature: 0.0
+
+# OpenRouter free-tier rate limits (self-reported by the user from the OpenRouter
+# pricing page as of 2026-08; re-check before a real run in case they changed):
+#   - without >= $10 lifetime credit purchase: 50 requests/day shared across all
+#     ":free" models
+#   - with >= $10 lifetime credit purchase: 1000 requests/day
+#   - in both cases: 20 requests/minute
+# The runner paces requests to stay under the per-minute cap regardless of which
+# tier is active; the daily cap only matters if you haven't topped up yet.
+rate_limit:
+  requests_per_minute: 20
+
+# Cost guard for paid models (currently only gemini-3-flash-preview). The runner
+# estimates cost before each call and refuses to continue once the running total
+# would exceed this, so a bug/retry-loop can't silently rack up a bill.
+cost_guard:
+  max_cost_usd: 1.00
