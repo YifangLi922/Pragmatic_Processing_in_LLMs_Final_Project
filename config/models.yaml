@@ -18,30 +18,30 @@
 models:
   - name: deepseek-v3
     provider: openrouter
-    model_id: deepseek/deepseek-chat:free
+    model_id: deepseek/deepseek-chat
     model_group: chinese_strong
-    is_free: true
-    price_input_per_million_usd: null
-    price_output_per_million_usd: null
-    notes: "DeepSeek non-reasoning flagship; direct-answer setting matches task format."
+    is_free: false
+    price_input_per_million_usd: 0.2574
+    price_output_per_million_usd: 1.0287
+    notes: "DeepSeek non-reasoning flagship; direct-answer setting matches task format. :free tier retired by OpenRouter as of 2026-08, switched to paid."
 
   - name: deepseek-r1-0528
     provider: openrouter
-    model_id: deepseek/deepseek-r1-0528:free
+    model_id: deepseek/deepseek-r1-0528
     model_group: chinese_strong
-    is_free: true
-    price_input_per_million_usd: null
-    price_output_per_million_usd: null
-    notes: "DeepSeek reasoning flagship; lets us check whether explicit CoT changes particle sensitivity."
+    is_free: false
+    price_input_per_million_usd: 0.50
+    price_output_per_million_usd: 2.15
+    notes: "DeepSeek reasoning flagship; lets us check whether explicit CoT changes particle sensitivity. :free tier retired by OpenRouter as of 2026-08, switched to paid. Reasoning tokens count as output, so actual spend may run higher than the input/output price alone suggests."
 
   - name: qwen3-next-80b
     provider: openrouter
-    model_id: qwen/qwen3-next-80b-a3b-instruct:free
+    model_id: qwen/qwen3-next-80b-a3b-instruct
     model_group: chinese_strong
-    is_free: true
-    price_input_per_million_usd: null
-    price_output_per_million_usd: null
-    notes: "Alibaba native-Chinese model, different vendor/architecture from DeepSeek."
+    is_free: false
+    price_input_per_million_usd: 0.10
+    price_output_per_million_usd: 1.10
+    notes: "Alibaba native-Chinese model, different vendor/architecture from DeepSeek. :free tier retired by OpenRouter as of 2026-08, switched to paid."
 
   - name: gemma-4-31b
     provider: openrouter
@@ -54,12 +54,12 @@ models:
 
   - name: mistral-small-3-24b
     provider: openrouter
-    model_id: mistralai/mistral-small-3-24b-instruct-2501:free
+    model_id: mistralai/mistral-small-24b-instruct-2501
     model_group: general
-    is_free: true
-    price_input_per_million_usd: null
-    price_output_per_million_usd: null
-    notes: "General-purpose, European vendor, distinct training corpus from Chinese-strong group."
+    is_free: false
+    price_input_per_million_usd: 0.05
+    price_output_per_million_usd: 0.08
+    notes: "General-purpose, European vendor, distinct training corpus from Chinese-strong group. :free tier retired by OpenRouter as of 2026-08, switched to paid (cheapest of the six)."
 
   - name: gemini-3-flash-preview
     provider: openrouter
@@ -85,8 +85,12 @@ decoding:
 rate_limit:
   requests_per_minute: 20
 
-# Cost guard for paid models (currently only gemini-3-flash-preview). The runner
+# Cost guard for paid models (now 4 of 6: deepseek-v3, deepseek-r1-0528,
+# qwen3-next-80b, mistral-small-3-24b, plus gemini-3-flash-preview). The runner
 # estimates cost before each call and refuses to continue once the running total
-# would exceed this, so a bug/retry-loop can't silently rack up a bill.
+# would exceed this, so a bug/retry-loop can't silently rack up a bill. A full
+# 108-item x 5-paid-model pass is estimated at well under $1 (deepseek-r1-0528's
+# reasoning tokens are the main source of uncertainty), so $3 leaves headroom for
+# retries/reruns without being reckless against the $10 balance.
 cost_guard:
-  max_cost_usd: 1.00
+  max_cost_usd: 3.00
