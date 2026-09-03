@@ -46,10 +46,27 @@ src/llm_query/              # 模块4：prompt构造 → 调用 → 解析 → �
   runner.py                      # 主循环：item × model，断点续跑
   __main__.py                    # 命令行入口
 
+src/scoring/                 # 模块5：模型答案 vs gold 打分
+  join.py                     # 把模块4结果和模块2的gold/保留family连接成打分表
+  accuracy.py                  # condition accuracy + Wilson 95% CI
+  pair_family_success.py        # pair success、family success
+  confusion.py                   # 每condition下模型答案的语义分布
+  logprob_shift.py                 # 有logprob时的语义概率轮廓（best-effort）
+  report.py                         # 组装每个模型的成绩单
+  __main__.py                        # 命令行入口
+
+src/stats/                   # 模块6：McNemar + 描述性图表（mixed-effects部分见下方"现状"）
+  mcnemar.py                  # McNemar精确检验（配对二元准确率比较）
+  plot_data.py                 # 出图前的纯数据整形（不含matplotlib，可单测）
+  plots.py                      # 四张图：confusion热图、condition accuracy、family success、model vs human baseline
+  __main__.py                    # 命令行入口
+
 tests/test_module1.py       # 单元测试，纯 Python fixture，不需要真实 .xlsx 文件
 tests/test_module2.py       # 单元测试，用 data/fake_annotations.json
 tests/test_module3.py       # 单元测试，用 data/fake_annotations.json（含手算校验的小样例）
 tests/test_module4.py       # 单元测试，全部用 MockProvider，不需要网络/key
+tests/test_module5.py       # 单元测试，手造已知期望结果的小样例
+tests/test_module6.py       # 单元测试，McNemar/出图数据整形单测 + 出图函数冒烟测试
 output/                     # 运行结果落盘目录（.jsonl，每行一条记录）
 ```
 
@@ -148,12 +165,45 @@ print(loo_human_baseline(items))
 
 `evaluate_families` 用的阈值（自然度下限、是否要求强共识）在 `src/gold/config.py` 的 `GoldConfig` 里，真实数据到位后如果要调整阈值，改这里的默认值或者传参覆盖，不用碰逻辑代码。
 
+## 模块5 怎么用
+
+模块1的输出 + 模块4的结果文件（可以是真实调用也可以是mock）在手后：
+
+```bash
+python -m src.scoring \
+    --items data/reconstructed.json \
+    --results output/real_openrouter_results.jsonl \
+    --output data/scorecards.json
+```
+
+`--results` 可以传多次（比如每个模型一个文件），也可以传一个合并好的文件。gold 和 family 保留名单是在这里直接调用模块2的 `evaluate_families()` 现算的（模块2自己还没有落盘 gold.csv/retained_families.csv），所以永远反映 `src/gold/config.py` 当前的阈值设置。
+
+打分口径（`join.py` 里也有注释）：API报错（限流、超时、被cost guard拦下）不计入打分分母，单独统计到 `n_errored`；调用成功但解析不出字母，按plan字面定义算"答错"而不是排除，单独统计到 `n_unparseable`，两个数字都留在成绩单里，方便你按需要重新核算。
+
+## 模块6 怎么用
+
+模块5的 `scorecards.json` + 模块1的还原数据在手后：
+
+```bash
+python -m src.stats \
+    --items data/reconstructed.json \
+    --results output/real_openrouter_results.jsonl \
+    --scorecards data/scorecards.json \
+    --output-dir output/figures \
+    --mcnemar-output data/mcnemar_results.json
+```
+
+产出：每个模型一张混淆矩阵热图、一张跨模型 condition accuracy 对比图（Wilson CI误差棒）、一张 family success 对比图、一张 family×model 成败热图、一张模型 vs LOO human baseline 对比图；`mcnemar_results.json` 是每个模型三组条件对（bare vs +吧、+吧 vs +吗、bare vs +吗）的精确McNemar检验结果。
+
+**mixed-effects logistic regression 还没写**：这部分该用 `statsmodels` 的 `BinomialBayesMixedGLM` 还是退一步用 GEE，等真实数据的方差结构出来后再定（细节见下面"现状"）。
+
 ## 现状 / 下一步
 
 - **已完成**：
   - 模块1（数据读取与还原）：真实母题对照表 + 4 份真实标注表验证通过，108/108 题成功还原，0 条数据质量警告（修复过一次真实数据里的杂散空格问题）。质量报告成功自动检出两个真实的数据质量信号（见上面"模块1 怎么用"）。
   - 模块2（gold定义 + family剔除）、模块3（一致度 + LOO human baseline）：先用假标注表验证了 4:0/3:1/2:1:1/2:2 四种共识、gold撞车/无多数/自然度不达标三种剔除场景；后来也在真实108题数据上跑通了全流程（仅作管线验证，不是最终结果——最终 gold/剔除/baseline 要等标注员数量和处理方式定下来、数据集冻结后才算数）。
   - 模块4（LLM调用）：prompt构造→调用→解析→落盘→断点续跑全流程先用假题+mock provider验证，后用真实 OpenRouter key 在 6 个真模型上实测通过（5假题×6模型，0 API错误、0 解析失败，实付约 $0.01）。`config/models.yaml` 里的模型自那之后有更新：原先以为免费的 4 个模型（deepseek-v3/deepseek-r1-0528/qwen3-next-80b/mistral-small-3-24b）在 OpenRouter 上的 `:free` 版本已下架，已切换成付费版本并配了真实单价；gemma-4-31b 也主动从免费版换成付费版，让六个模型都在同一档（付费）上跑，避免"某模型表现差是因为免费限流"这种解释。
-  - 单元测试共 55 个，全过。
+  - 模块5（打分）：condition accuracy（Wilson 95% CI）、pair/family success、confusion matrix、best-effort logprob概率轮廓。打分口径（报错排除、解析失败算错）写清楚在代码注释里。用真实108题数据（mock provider跑一个family）做过全链路验证。
+  - 模块6（McNemar + 描述性图表）：McNemar精确检验、四张图（confusion热图/condition accuracy/family success/model vs baseline）+ 额外加了一张family×model成败热图。用真实数据全链路验证时抓到一个真bug——Wilson CI在accuracy恰好等于0.0时会有浮点误差（比如`5.5e-17`而不是精确的`0.0`），导致画图时误差棒变成负数报错，已修复并补了回归测试。mixed-effects部分留到真数据到位后再定用GEE还是`BinomialBayesMixedGLM`。
+  - 单元测试共 79 个，全过。
 - **进行中**：第 5 位标注员（英语文学硕士朋友）标注中，尚未提交。`src/gold/majority_vote.py` 的 `consensus_tier()` 目前按 4 人场景写死了"强/弱共识"的判定字符串，等 5 人数据到位、且定好 5 人场景下的共识阈值该怎么划之后再更新——这是需要人来决定的研究设计问题，不只是代码改动。
-- **模块5/6**（打分、统计、出图）依赖模块1/2/3/4 的输出，尚未开始。

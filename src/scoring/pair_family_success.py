@@ -33,13 +33,22 @@ def pair_success(scored_records: list[dict]) -> dict:
     return result
 
 
-def family_success(scored_records: list[dict]) -> dict:
+def family_success_by_family(scored_records: list[dict]) -> dict[str, bool]:
+    """Per-family success (all three conditions correct), for families that
+    have all three conditions present in these scored records. Exposed
+    separately from family_success() so module 6 can build a family x model
+    comparison view without needing module 4's raw per-item records again.
+    """
     by_family = _correct_by_family(scored_records)
-    n = 0
-    n_success = 0
-    for conds in by_family.values():
-        if {"bare", "ba", "ma"} <= conds.keys():
-            n += 1
-            if all(conds.values()):
-                n_success += 1
+    return {
+        family_id: all(conds.values())
+        for family_id, conds in by_family.items()
+        if {"bare", "ba", "ma"} <= conds.keys()
+    }
+
+
+def family_success(scored_records: list[dict]) -> dict:
+    detail = family_success_by_family(scored_records)
+    n = len(detail)
+    n_success = sum(detail.values())
     return {"n_families": n, "n_success": n_success, "rate": (n_success / n) if n else None}
