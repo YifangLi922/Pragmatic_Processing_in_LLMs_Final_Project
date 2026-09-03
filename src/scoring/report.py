@@ -8,7 +8,7 @@ from .accuracy import condition_accuracy
 from .confusion import confusion_matrix
 from .join import build_scoreboard
 from .logprob_shift import semantic_probability_profile
-from .pair_family_success import family_success, pair_success
+from .pair_family_success import family_success, family_success_by_family, pair_success
 
 
 def build_scorecard(model_name: str, scored_records: list[dict], skipped_for_model: list[dict]) -> dict:
@@ -25,6 +25,7 @@ def build_scorecard(model_name: str, scored_records: list[dict], skipped_for_mod
         "condition_accuracy": condition_accuracy(scored_records),
         "pair_success": pair_success(scored_records),
         "family_success": family_success(scored_records),
+        "family_success_detail": family_success_by_family(scored_records),
         "confusion_matrix": confusion_matrix(scored_records),
         "logprob_shift": semantic_probability_profile(scored_records),
     }
