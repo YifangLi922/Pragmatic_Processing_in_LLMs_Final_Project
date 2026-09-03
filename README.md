@@ -12,6 +12,18 @@ data/fake_annotations.json # 5 个假 family（15题）× 4 假标注员，用�
                             # item_id/family_id/particle_condition + 语义层面的标注，
                             # 刻意覆盖了 4:0/3:1/2:1:1/2:2 四种共识、以及 gold 撞车/
                             # 无多数/自然度不达标三种剔除触发场景，方便测试
+data/reconstructed.json    # 模块1对真实标注数据的还原结果（108题，4标注员），非最终数据集
+data/quality_report.json   # 模块1的质量报告（按标注员：划水/漏答/自然度方差/与设计gold过度一致等）
+SFP标注完整版.xlsx          # 母题对照表（答案键），模块1的 --master 输入
+SFP母语者标注N ....xlsx     # 4 份标注员原始答题表，模块1的 --annotator 输入
+
+src/reconstruct/            # 模块1：数据读取与还原
+  semantics.py               # 从选项文本模式匹配出 statement/confirmation/neutral/distractor
+  master_table.py             # 读母题对照表（答案键），家族/条件/设计gold/选项语义
+  annotator_table.py           # 读单个标注员的原始答题表
+  build.py                      # 按shuffled_index join，字母→语义翻译，产出4.3节的结构
+  quality.py                     # 质量报告：划水/漏答/自然度方差/与设计gold过度一致
+  __main__.py                     # 命令行入口
 
 src/gold/                  # 模块2：gold 定义 + family 剔除
   config.py                 # 可配置阈值（自然度下限、是否要求强共识）
@@ -34,6 +46,7 @@ src/llm_query/              # 模块4：prompt构造 → 调用 → 解析 → �
   runner.py                      # 主循环：item × model，断点续跑
   __main__.py                    # 命令行入口
 
+tests/test_module1.py       # 单元测试，纯 Python fixture，不需要真实 .xlsx 文件
 tests/test_module2.py       # 单元测试，用 data/fake_annotations.json
 tests/test_module3.py       # 单元测试，用 data/fake_annotations.json（含手算校验的小样例）
 tests/test_module4.py       # 单元测试，全部用 MockProvider，不需要网络/key
@@ -85,6 +98,32 @@ python -m src.llm_query --items data/fake_items.json \
 
 `output/*.jsonl` 每行一个 JSON 对象，对应 plan 里 4.4 节的模型结果表（外加 `family_id`/`particle_condition`/`prompt`/`error` 等便于调试的字段）。`error` 为 `null` 代表成功；非 `null` 代表这条记录失败（解析失败、API报错、或被 cost guard 拦下），断点续跑时会重试。
 
+## 模块1 怎么用
+
+真实母题对照表（答案键，"研究者答案键"工作表）+ N 份标注员原始答题表（"母语者填写"工作表）在手后：
+
+```bash
+python -m src.reconstruct \
+    --master "SFP标注完整版.xlsx" \
+    --annotator A1="SFP母语者标注1 经济学.xlsx" \
+    --annotator A2="SFP母语者标注2 媒体信息.xlsx" \
+    --annotator A3="SFP母语者标注3 材料科学.xlsx" \
+    --annotator A4="SFP母语者标注4 BWL.xlsx" \
+    --output data/reconstructed.json \
+    --quality-output data/quality_report.json
+```
+
+`--annotator` 可以传任意多个（不写死 4 个），加第 5 个标注员只需要多加一个 `--annotator` 参数，不用改代码。选项字母到语义骨架（statement/confirmation/neutral/distractor）的映射不依赖额外的 option_order 列，而是直接从选项原文按固定模板模式匹配得出（见 `semantics.py`），这是从真实答案键的用词规律里验证出来的，比预想的方案更省一步。
+
+质量报告目前会自动标出：划水（单一字母占比>70%）、漏答、**自然度评分标准差为0**、**零犹豫+零"无合适答案"+零自然度方差同时出现**（"flat responding"信号）、以及**与设计者预期gold的一致率相对同批标注员是统计离群值**（z>2，需要3人以上才会算）。这几条不是随口加的——是照着一次真实的"怀疑标注员用AI代答"场景写的，现在跑在真实4人数据上就是这个结果：
+
+```
+[A3] 13/108 items unanswered
+[A4] naturalness rating is constant (5) across all 108 items;
+     flat responding: zero hesitation marks, zero 'no valid option' marks,
+     and zero naturalness variance -- worth a closer look
+```
+
 ## 模块2/3 怎么用
 
 真实标注数据到位、模块1把它还原成 4.3 节那种"每题一条记录 + annotations 列表"的形状之前，可以先用 `data/fake_annotations.json`（已经是还原后的形状）跑通逻辑：
@@ -112,7 +151,9 @@ print(loo_human_baseline(items))
 ## 现状 / 下一步
 
 - **已完成**：
-  - 模块2（gold定义 + family剔除）、模块3（一致度 + LOO human baseline）：用假标注表验证了 4:0/3:1/2:1:1/2:2 四种共识、gold撞车/无多数/自然度不达标三种剔除场景，43个单元测试全过。
-  - 模块4（LLM调用）：prompt构造→调用→解析→落盘→断点续跑全流程用假题+mock provider验证通过。真实 OpenRouter 调用因为这个云端沙盒环境的网络出口策略挡住了 `openrouter.ai`，还没能在这里实测，需要你在自己电脑本地跑一次验证（见上面"真实调用 OpenRouter"一节），或者放开这个环境的网络策略。
-- **待接入**：模块1（数据读取与还原）——框架等真实标注表的列名确定后再写，逻辑本身不复杂（按 `shuffled_index` 还原 + 按 `option_order` 把字母翻译成语义）。
+  - 模块1（数据读取与还原）：真实母题对照表 + 4 份真实标注表验证通过，108/108 题成功还原，0 条数据质量警告（修复过一次真实数据里的杂散空格问题）。质量报告成功自动检出两个真实的数据质量信号（见上面"模块1 怎么用"）。
+  - 模块2（gold定义 + family剔除）、模块3（一致度 + LOO human baseline）：先用假标注表验证了 4:0/3:1/2:1:1/2:2 四种共识、gold撞车/无多数/自然度不达标三种剔除场景；后来也在真实108题数据上跑通了全流程（仅作管线验证，不是最终结果——最终 gold/剔除/baseline 要等标注员数量和处理方式定下来、数据集冻结后才算数）。
+  - 模块4（LLM调用）：prompt构造→调用→解析→落盘→断点续跑全流程先用假题+mock provider验证，后用真实 OpenRouter key 在 6 个真模型上实测通过（5假题×6模型，0 API错误、0 解析失败，实付约 $0.01）。`config/models.yaml` 里的模型自那之后有更新：原先以为免费的 4 个模型（deepseek-v3/deepseek-r1-0528/qwen3-next-80b/mistral-small-3-24b）在 OpenRouter 上的 `:free` 版本已下架，已切换成付费版本并配了真实单价；gemma-4-31b 也主动从免费版换成付费版，让六个模型都在同一档（付费）上跑，避免"某模型表现差是因为免费限流"这种解释。
+  - 单元测试共 55 个，全过。
+- **进行中**：第 5 位标注员（英语文学硕士朋友）标注中，尚未提交。`src/gold/majority_vote.py` 的 `consensus_tier()` 目前按 4 人场景写死了"强/弱共识"的判定字符串，等 5 人数据到位、且定好 5 人场景下的共识阈值该怎么划之后再更新——这是需要人来决定的研究设计问题，不只是代码改动。
 - **模块5/6**（打分、统计、出图）依赖模块1/2/3/4 的输出，尚未开始。

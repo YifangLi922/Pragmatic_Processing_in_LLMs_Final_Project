@@ -1,0 +1,86 @@
+{
+  "warnings": [],
+  "per_annotator": {
+    "A1": {
+      "annotator_id": "A1",
+      "n_items": 108,
+      "n_answered": 108,
+      "n_missing": 0,
+      "max_letter_share": 0.2962962962962963,
+      "letter_distribution": {
+        "C": 22,
+        "D": 29,
+        "A": 32,
+        "B": 25
+      },
+      "naturalness_mean": 4.462962962962963,
+      "naturalness_sd": 0.5515286152531641,
+      "hesitation_rate": 0.0,
+      "no_valid_option_rate": 0.0,
+      "designed_gold_agreement_rate": 0.4722222222222222,
+      "flags": []
+    },
+    "A2": {
+      "annotator_id": "A2",
+      "n_items": 108,
+      "n_answered": 108,
+      "n_missing": 0,
+      "max_letter_share": 0.26851851851851855,
+      "letter_distribution": {
+        "C": 26,
+        "D": 29,
+        "B": 28,
+        "A": 25
+      },
+      "naturalness_mean": 4.944444444444445,
+      "naturalness_sd": 0.2664350846284844,
+      "hesitation_rate": 0.018518518518518517,
+      "no_valid_option_rate": 0.018518518518518517,
+      "designed_gold_agreement_rate": 0.8703703703703703,
+      "flags": []
+    },
+    "A3": {
+      "annotator_id": "A3",
+      "n_items": 108,
+      "n_answered": 95,
+      "n_missing": 13,
+      "max_letter_share": 0.2631578947368421,
+      "letter_distribution": {
+        "C": 24,
+        "D": 24,
+        "B": 22,
+        "A": 25
+      },
+      "naturalness_mean": 4.989473684210527,
+      "naturalness_sd": 0.10205641805087008,
+      "hesitation_rate": 0.009259259259259259,
+      "no_valid_option_rate": 0.10185185185185185,
+      "designed_gold_agreement_rate": 0.7684210526315789,
+      "flags": [
+        "13/108 items unanswered"
+      ]
+    },
+    "A4": {
+      "annotator_id": "A4",
+      "n_items": 108,
+      "n_answered": 108,
+      "n_missing": 0,
+      "max_letter_share": 0.25925925925925924,
+      "letter_distribution": {
+        "C": 26,
+        "D": 27,
+        "B": 28,
+        "A": 27
+      },
+      "naturalness_mean": 5,
+      "naturalness_sd": 0.0,
+      "hesitation_rate": 0.0,
+      "no_valid_option_rate": 0.0,
+      "designed_gold_agreement_rate": 0.9444444444444444,
+      "flags": [
+        "naturalness rating is constant (5) across all 108 items",
+        "flat responding: zero hesitation marks, zero 'no valid option' marks, and zero naturalness variance -- consistent with (not proof of) a non-genuine/automated response, worth a closer look"
+      ]
+    }
+  }
+}
