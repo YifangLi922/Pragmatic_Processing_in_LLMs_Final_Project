@@ -1,0 +1,5 @@
+reference_label,statement,confirmation,neutral,distractor
+statement,0.0,1.0,0.0,0.0
+confirmation,0.05263157894736842,0.9473684210526315,0.0,0.0
+neutral,0.0,1.0,0.0,0.0
+distractor,0.0,0.0,0.0,1.0
