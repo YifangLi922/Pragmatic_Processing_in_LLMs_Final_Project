@@ -1,0 +1,5 @@
+reference_label,statement,confirmation,neutral,distractor
+statement,1,0,0,1
+confirmation,9,16,1,2
+neutral,0,1,0,0
+distractor,0,0,0,1
