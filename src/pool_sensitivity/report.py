@@ -53,3 +53,11 @@ def write_empirical_gold_core3(rows: list[dict], path: str) -> None:
 
 def write_gold_shifted_families(rows: list[dict], path: str) -> None:
     _write_rows(path, ["family_id", "condition", "design_gold_label", "empirical_gold_label", "margin"], rows)
+
+
+def write_core3_keep_dropouts(rows: list[dict], path: str) -> None:
+    _write_rows(
+        path,
+        ["family_id", "core3_class", "econ_class", "bwl_class", "all5_class", "dropped_by_pools"],
+        rows,
+    )

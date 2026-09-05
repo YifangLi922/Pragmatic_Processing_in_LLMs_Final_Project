@@ -13,6 +13,7 @@ Usage:
 import argparse
 import json
 import os
+from collections import Counter
 
 from .classify import classify_family
 from .gold import empirical_gold_row, shifted_row
@@ -20,10 +21,13 @@ from .majority import condition_majority
 from .pools import CONDITIONS, POOLS
 from .report import (
     write_collapse_breakdown,
+    write_core3_keep_dropouts,
     write_empirical_gold_core3,
     write_gold_shifted_families,
     write_pool_sensitivity_grid,
 )
+
+_NON_CORE3_POOLS = [p for p in POOLS if p != "core3"]
 
 _README = """\
 # Pool sensitivity grid + empirical gold -- output guide
@@ -36,19 +40,30 @@ testing. KEEP/EXCLUDE is a human decision made by reading these tables.
 ## Files
 
 - `pool_sensitivity_grid.csv` -- one row per family (36 rows). Each pool's
-  KEEP/COLLAPSE/NO_CONSENSUS class, plus `stable_keep_all_pools` (True only
-  when all four pools independently land on KEEP) and `family_gold_shifted`
-  (True if pool_core3's empirical gold moved off design gold on any
-  condition -- see gold_shifted_families.csv). `core3_class_detail` shows
-  pool_core3's actual majority label per condition for a quick look without
-  opening empirical_gold_core3.csv.
+  class -- KEEP / COLLAPSE / NO_CONSENSUS / EXCLUDE_BROKEN -- plus
+  `stable_keep_all_pools` (True only when all four pools independently land
+  on KEEP) and `family_gold_shifted` (True if pool_core3's empirical gold
+  moved off design gold on any condition -- see gold_shifted_families.csv).
+  `core3_class_detail` shows pool_core3's actual majority label per
+  condition for a quick look without opening empirical_gold_core3.csv.
+  **EXCLUDE_BROKEN is checked before everything else**, including
+  NO_CONSENSUS: any condition whose majority landed on the DISTRACTOR role
+  marks the whole family broken for that pool, regardless of what the other
+  two conditions look like or whether they even have a majority.
 - `collapse_breakdown.csv` -- one row per (family, pool) that came out
-  COLLAPSE, split into `collapse_type` distractor (some condition's majority
-  landed on the distractor role -- the item didn't activate its target
-  semantics) vs. structural (no distractor, but two or more conditions
-  converged on the same label -- e.g. +ba and +ma both read as TENTATIVE).
-  Structural rows record exactly which conditions collapsed together
-  (`collapse_pair`, e.g. "ba=ma") and onto which label (`collapse_label`).
+  COLLAPSE. Distractor-caused breakage is no longer a COLLAPSE subtype (it's
+  its own EXCLUDE_BROKEN class now, not listed here) -- every row in this
+  file is `collapse_type=structural`: no distractor majority anywhere, but
+  two or more conditions converged onto the same label (e.g. +ba and +ma
+  both read as TENTATIVE). Rows record exactly which conditions collapsed
+  together (`collapse_pair`, e.g. "ba=ma") and onto which label
+  (`collapse_label`).
+- `core3_keep_dropouts.csv` -- families that are KEEP under pool_core3 but
+  not `stable_keep_all_pools` (i.e. at least one of pool_econ/bwl/all5
+  disagrees). Shows each pool's class and `dropped_by_pools`: which of
+  econ/bwl/all5 pulled the family off KEEP. Use this to see whether it's
+  consistently the same pool doing the dropping (e.g. always pool_econ)
+  before reading anything into it -- see the caveat below.
 - `empirical_gold_core3.csv` -- one row per (family, condition) (108 rows),
   pool_core3 only. `majority_label` is the empirical gold when
   `has_majority` is True (None otherwise); compared against
@@ -100,6 +115,7 @@ def run_all(items: list[dict], output_dir: str) -> None:
     grid_rows = []
     collapse_rows = []
     gold_rows = []
+    dropout_rows = []
 
     for family_id in sorted(families):
         fam_items = families[family_id]
@@ -140,14 +156,35 @@ def run_all(items: list[dict], output_dir: str) -> None:
             }
         )
 
+        if classifications["core3"]["class"] == "KEEP" and not stable_keep:
+            dropped_by = [p for p in _NON_CORE3_POOLS if classifications[p]["class"] != "KEEP"]
+            dropout_rows.append(
+                {
+                    "family_id": family_id,
+                    "core3_class": classifications["core3"]["class"],
+                    "econ_class": classifications["econ"]["class"],
+                    "bwl_class": classifications["bwl"]["class"],
+                    "all5_class": classifications["all5"]["class"],
+                    "dropped_by_pools": ",".join(dropped_by),
+                }
+            )
+
     shifted_rows = [shifted_row(r) for r in gold_rows if r["gold_shifted"]]
 
     write_pool_sensitivity_grid(grid_rows, os.path.join(output_dir, "pool_sensitivity_grid.csv"))
     write_collapse_breakdown(collapse_rows, os.path.join(output_dir, "collapse_breakdown.csv"))
     write_empirical_gold_core3(gold_rows, os.path.join(output_dir, "empirical_gold_core3.csv"))
     write_gold_shifted_families(shifted_rows, os.path.join(output_dir, "gold_shifted_families.csv"))
+    write_core3_keep_dropouts(dropout_rows, os.path.join(output_dir, "core3_keep_dropouts.csv"))
     with open(os.path.join(output_dir, "Pool_Sensitivity_README.md"), "w", encoding="utf-8") as f:
         f.write(_README)
+
+    for pool_col in ("core3_class", "econ_class", "bwl_class", "all5_class"):
+        counts = Counter(row[pool_col] for row in grid_rows)
+        print(f"  {pool_col}: {dict(counts)}")
+    print(f"  stable_keep_all_pools=True: {sum(1 for r in grid_rows if r['stable_keep_all_pools'])}")
+    print(f"  family_gold_shifted=True: {sum(1 for r in grid_rows if r['family_gold_shifted'])}")
+    print(f"  core3 KEEP but dropped elsewhere: {len(dropout_rows)}")
 
 
 def main() -> None:

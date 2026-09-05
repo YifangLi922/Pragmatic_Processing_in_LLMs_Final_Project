@@ -8,19 +8,30 @@ testing. KEEP/EXCLUDE is a human decision made by reading these tables.
 ## Files
 
 - `pool_sensitivity_grid.csv` -- one row per family (36 rows). Each pool's
-  KEEP/COLLAPSE/NO_CONSENSUS class, plus `stable_keep_all_pools` (True only
-  when all four pools independently land on KEEP) and `family_gold_shifted`
-  (True if pool_core3's empirical gold moved off design gold on any
-  condition -- see gold_shifted_families.csv). `core3_class_detail` shows
-  pool_core3's actual majority label per condition for a quick look without
-  opening empirical_gold_core3.csv.
+  class -- KEEP / COLLAPSE / NO_CONSENSUS / EXCLUDE_BROKEN -- plus
+  `stable_keep_all_pools` (True only when all four pools independently land
+  on KEEP) and `family_gold_shifted` (True if pool_core3's empirical gold
+  moved off design gold on any condition -- see gold_shifted_families.csv).
+  `core3_class_detail` shows pool_core3's actual majority label per
+  condition for a quick look without opening empirical_gold_core3.csv.
+  **EXCLUDE_BROKEN is checked before everything else**, including
+  NO_CONSENSUS: any condition whose majority landed on the DISTRACTOR role
+  marks the whole family broken for that pool, regardless of what the other
+  two conditions look like or whether they even have a majority.
 - `collapse_breakdown.csv` -- one row per (family, pool) that came out
-  COLLAPSE, split into `collapse_type` distractor (some condition's majority
-  landed on the distractor role -- the item didn't activate its target
-  semantics) vs. structural (no distractor, but two or more conditions
-  converged on the same label -- e.g. +ba and +ma both read as TENTATIVE).
-  Structural rows record exactly which conditions collapsed together
-  (`collapse_pair`, e.g. "ba=ma") and onto which label (`collapse_label`).
+  COLLAPSE. Distractor-caused breakage is no longer a COLLAPSE subtype (it's
+  its own EXCLUDE_BROKEN class now, not listed here) -- every row in this
+  file is `collapse_type=structural`: no distractor majority anywhere, but
+  two or more conditions converged onto the same label (e.g. +ba and +ma
+  both read as TENTATIVE). Rows record exactly which conditions collapsed
+  together (`collapse_pair`, e.g. "ba=ma") and onto which label
+  (`collapse_label`).
+- `core3_keep_dropouts.csv` -- families that are KEEP under pool_core3 but
+  not `stable_keep_all_pools` (i.e. at least one of pool_econ/bwl/all5
+  disagrees). Shows each pool's class and `dropped_by_pools`: which of
+  econ/bwl/all5 pulled the family off KEEP. Use this to see whether it's
+  consistently the same pool doing the dropping (e.g. always pool_econ)
+  before reading anything into it -- see the caveat below.
 - `empirical_gold_core3.csv` -- one row per (family, condition) (108 rows),
   pool_core3 only. `majority_label` is the empirical gold when
   `has_majority` is True (None otherwise); compared against

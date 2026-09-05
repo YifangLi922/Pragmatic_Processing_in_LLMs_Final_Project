@@ -7,30 +7,33 @@ def classify_family(condition_results: dict[str, dict]) -> dict:
     """`condition_results` = {"bare": condition_majority() dict, "ba": ..., "ma": ...}
     for one family under one pool.
 
-    - NO_CONSENSUS: any condition lacks a majority.
-    - KEEP: all three conditions have a majority, none of them DISTRACTOR,
-      AND the three majority labels are pairwise distinct -- a genuine
-      three-way contrast, matching the family's design intent (bare vs +ba
-      vs +ma each meant to read differently). Design-gold agreement is
-      irrelevant here (spec section 7 handles that separately and must not
-      feed back into this decision).
-    - COLLAPSE: all three have a majority but the contrast is broken. Split
-      into distractor (ANY condition's majority is the DISTRACTOR role --
-      the item itself failed to activate its target semantics, checked
-      first and independent of what the other two conditions read as) vs.
-      structural (no distractor majority, but two or more conditions
-      collapsed onto the same label) per section 6.
+    - EXCLUDE_BROKEN (checked first, ahead of everything else, including
+      NO_CONSENSUS): any condition's majority_label is DISTRACTOR -- the
+      item failed to activate its target semantics on at least one
+      condition. This used to be a COLLAPSE subtype (collapse_distractor);
+      it's now its own top-level class and short-circuits before the
+      has-majority check, so a family with a distractor majority on one
+      condition and no majority at all on another is EXCLUDE_BROKEN, not
+      NO_CONSENSUS.
+    - NO_CONSENSUS: (no distractor majority anywhere, and) any condition
+      lacks a majority.
+    - KEEP: all three conditions have a majority, none DISTRACTOR, AND the
+      three majority labels are pairwise distinct -- a genuine three-way
+      contrast, matching the family's design intent (bare vs +ba vs +ma
+      each meant to read differently). Design-gold agreement is irrelevant
+      here (spec section 7 handles that separately and must not feed back
+      into this decision).
+    - COLLAPSE (structural only now -- see EXCLUDE_BROKEN above): all three
+      have a majority, none DISTRACTOR, but two or more conditions
+      collapsed onto the same label, so the contrast is broken.
     """
-    if not all(condition_results[c]["has_majority"] for c in CONDITIONS):
-        return {"class": "NO_CONSENSUS", "collapse_type": None, "collapse_pair": None, "collapse_label": None}
-
     labels = {c: condition_results[c]["majority_label"] for c in CONDITIONS}
 
-    # Checked before the pairwise-distinctness test: a distractor majority
-    # on any single condition is a design failure regardless of whether the
-    # other two conditions happen to differ from each other.
     if "distractor" in labels.values():
-        return {"class": "COLLAPSE", "collapse_type": "distractor", "collapse_pair": None, "collapse_label": None}
+        return {"class": "EXCLUDE_BROKEN", "collapse_type": None, "collapse_pair": None, "collapse_label": None}
+
+    if not all(condition_results[c]["has_majority"] for c in CONDITIONS):
+        return {"class": "NO_CONSENSUS", "collapse_type": None, "collapse_pair": None, "collapse_label": None}
 
     if len(set(labels.values())) == len(CONDITIONS):
         return {"class": "KEEP", "collapse_type": None, "collapse_pair": None, "collapse_label": None}

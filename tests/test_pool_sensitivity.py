@@ -117,10 +117,19 @@ def test_classify_family_no_consensus_missing_majority():
     assert result["class"] == "NO_CONSENSUS"
 
 
-def test_classify_family_collapse_distractor_takes_precedence():
+def test_classify_family_exclude_broken_distractor_takes_precedence():
     result = classify_family({"bare": _cond_result("distractor"), "ba": _cond_result("confirmation"), "ma": _cond_result("neutral")})
-    assert result["class"] == "COLLAPSE"
-    assert result["collapse_type"] == "distractor"
+    assert result["class"] == "EXCLUDE_BROKEN"
+    assert result["collapse_type"] is None
+
+
+def test_classify_family_exclude_broken_beats_no_consensus():
+    # distractor majority on one condition, no majority at all on another --
+    # EXCLUDE_BROKEN short-circuits before the has-majority check runs.
+    result = classify_family(
+        {"bare": _cond_result("distractor"), "ba": _cond_result(None, has_majority=False), "ma": _cond_result("neutral")}
+    )
+    assert result["class"] == "EXCLUDE_BROKEN"
 
 
 def test_classify_family_collapse_structural_pair():
