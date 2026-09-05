@@ -1,0 +1,7 @@
+family_id,collapse_pair,collapse_label,cond1_modal,cond2_modal,same_modal
+F06,bare=ba,statement,C,C,True
+F11,ba=ma,confirmation,C,C,True
+F12,ba=ma,confirmation,C,B,False
+F13,ba=ma,confirmation,A,A,True
+F18,ba=ma,neutral,B,B,True
+F33,bare=ba,statement,C,C,True
