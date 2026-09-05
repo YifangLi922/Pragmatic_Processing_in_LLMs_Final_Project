@@ -2,6 +2,9 @@
 Pure Python fixtures -- no .xlsx or reconstructed.json needed.
 """
 
+import csv
+
+from src.pool_sensitivity.__main__ import run_all
 from src.pool_sensitivity.classify import classify_family
 from src.pool_sensitivity.gold import empirical_gold_row, shifted_row
 from src.pool_sensitivity.majority import condition_majority, pool_majority
@@ -191,3 +194,50 @@ def test_empirical_gold_row_no_majority_is_never_shifted():
     row = empirical_gold_row(item)
     assert row["has_majority"] is False
     assert row["gold_shifted"] is False
+
+
+# ---- run_all: EXCLUDE_BROKEN must not leak into gold outputs ---------------
+
+
+def _core3_annotations(bare, ba, ma):
+    return {
+        "bare": [_annotation("Media", bare), _annotation("Materials", bare), _annotation("EngLit", bare)],
+        "ba": [_annotation("Media", ba), _annotation("Materials", ba), _annotation("EngLit", ba)],
+        "ma": [_annotation("Media", ma), _annotation("Materials", ma), _annotation("EngLit", ma)],
+    }
+
+
+def test_run_all_excludes_broken_family_from_gold_outputs(tmp_path):
+    # F01: bare and ba both collapse to distractor under core3 -- EXCLUDE_BROKEN
+    # -- but ma's neutral -> confirmation would look like an ordinary shift
+    # read in isolation (this mirrors the real F31 case). F02 is a normal
+    # KEEP family with one genuine shift on "ma".
+    broken_anns = _core3_annotations("distractor", "distractor", "confirmation")
+    keep_anns = _core3_annotations("statement", "confirmation", "confirmation")
+    items = [
+        _item("F01", "bare", broken_anns["bare"], gold_semantic_designed="statement"),
+        _item("F01", "ba", broken_anns["ba"], gold_semantic_designed="confirmation"),
+        _item("F01", "ma", broken_anns["ma"], gold_semantic_designed="neutral"),
+        _item("F02", "bare", keep_anns["bare"], gold_semantic_designed="statement"),
+        _item("F02", "ba", keep_anns["ba"], gold_semantic_designed="confirmation"),
+        _item("F02", "ma", keep_anns["ma"], gold_semantic_designed="neutral"),
+    ]
+
+    output_dir = tmp_path / "pool_sensitivity_output"
+    run_all(items, str(output_dir))
+
+    with open(output_dir / "pool_sensitivity_grid.csv") as f:
+        grid = {r["family_id"]: r for r in csv.DictReader(f)}
+    assert grid["F01"]["core3_class"] == "EXCLUDE_BROKEN"
+    assert grid["F01"]["family_gold_shifted"] == "False"
+    assert grid["F02"]["family_gold_shifted"] == "True"
+
+    with open(output_dir / "empirical_gold_core3.csv") as f:
+        gold_families = {r["family_id"] for r in csv.DictReader(f)}
+    assert "F01" not in gold_families
+    assert "F02" in gold_families
+
+    with open(output_dir / "gold_shifted_families.csv") as f:
+        shifted_families = {r["family_id"] for r in csv.DictReader(f)}
+    assert "F01" not in shifted_families
+    assert "F02" in shifted_families

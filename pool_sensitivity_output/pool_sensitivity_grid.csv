@@ -7,7 +7,7 @@ F05,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,False,False,bare:stateme
 F06,COLLAPSE,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,False,True,bare:statement; ba:statement; ma:neutral
 F07,KEEP,KEEP,KEEP,KEEP,True,False,bare:statement; ba:confirmation; ma:neutral
 F08,NO_CONSENSUS,COLLAPSE,KEEP,NO_CONSENSUS,False,False,bare:statement; ba:confirmation; ma:NONE
-F09,EXCLUDE_BROKEN,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,False,True,bare:statement; ba:confirmation; ma:distractor
+F09,EXCLUDE_BROKEN,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,False,False,bare:statement; ba:confirmation; ma:distractor
 F10,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,False,False,bare:statement; ba:NONE; ma:neutral
 F11,COLLAPSE,NO_CONSENSUS,NO_CONSENSUS,KEEP,False,True,bare:statement; ba:confirmation; ma:confirmation
 F12,COLLAPSE,COLLAPSE,COLLAPSE,COLLAPSE,False,True,bare:statement; ba:confirmation; ma:confirmation
@@ -29,7 +29,7 @@ F27,KEEP,KEEP,KEEP,KEEP,True,False,bare:statement; ba:confirmation; ma:neutral
 F28,KEEP,KEEP,KEEP,KEEP,True,False,bare:statement; ba:confirmation; ma:neutral
 F29,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,KEEP,False,False,bare:statement; ba:confirmation; ma:NONE
 F30,KEEP,KEEP,KEEP,KEEP,True,False,bare:statement; ba:confirmation; ma:neutral
-F31,EXCLUDE_BROKEN,EXCLUDE_BROKEN,NO_CONSENSUS,EXCLUDE_BROKEN,False,True,bare:distractor; ba:distractor; ma:confirmation
+F31,EXCLUDE_BROKEN,EXCLUDE_BROKEN,NO_CONSENSUS,EXCLUDE_BROKEN,False,False,bare:distractor; ba:distractor; ma:confirmation
 F32,KEEP,NO_CONSENSUS,KEEP,KEEP,False,False,bare:statement; ba:confirmation; ma:neutral
 F33,COLLAPSE,NO_CONSENSUS,NO_CONSENSUS,NO_CONSENSUS,False,True,bare:statement; ba:statement; ma:confirmation
 F34,KEEP,KEEP,KEEP,KEEP,True,False,bare:statement; ba:confirmation; ma:neutral
