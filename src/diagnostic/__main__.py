@@ -6,11 +6,11 @@ section 2): its response-process concerns can't be diagnosed via agreement
 with others, and including it would pollute the pool used to diagnose Econ.
 
 Output layout (one folder per annotator, one subfolder per mode -- see
-diagnostic_output/README.md for the full explanation):
+diagnostic_output/Diagnostic_Output_README.md for the full explanation):
 
     {output_dir}/
         diagnostic_summary_all_annotators.csv
-        README.md
+        Diagnostic_Output_README.md
         {ann}/mode_{A,B}/
             condition_summary.csv
             reference_marginals.csv
@@ -201,7 +201,7 @@ def run_all(items: list[dict], output_dir: str) -> None:
             )
 
     write_cross_annotator_summary(summary_rows, os.path.join(output_dir, "diagnostic_summary_all_annotators.csv"))
-    with open(os.path.join(output_dir, "README.md"), "w", encoding="utf-8") as f:
+    with open(os.path.join(output_dir, "Diagnostic_Output_README.md"), "w", encoding="utf-8") as f:
         f.write(_README)
 
 
