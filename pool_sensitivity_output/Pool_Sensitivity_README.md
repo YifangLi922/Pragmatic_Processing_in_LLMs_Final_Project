@@ -32,11 +32,14 @@ testing. KEEP/EXCLUDE is a human decision made by reading these tables.
   econ/bwl/all5 pulled the family off KEEP. Use this to see whether it's
   consistently the same pool doing the dropping (e.g. always pool_econ)
   before reading anything into it -- see the caveat below.
-- `empirical_gold_core3.csv` -- one row per (family, condition) (108 rows),
-  pool_core3 only. `majority_label` is the empirical gold when
-  `has_majority` is True (None otherwise); compared against
-  `design_gold_label` to set `gold_shifted`. `margin` (top count minus
-  runner-up count) says how solid that majority is.
+- `empirical_gold_core3.csv` -- one row per (family, condition), pool_core3
+  only, **excluding every family that is EXCLUDE_BROKEN under pool_core3**
+  (so fewer than 108 rows -- a broken family has no valid empirical gold to
+  report on any of its conditions, not just the one that triggered the
+  break). `majority_label` is the empirical gold when `has_majority` is True
+  (None otherwise); compared against `design_gold_label` to set
+  `gold_shifted`. `margin` (top count minus runner-up count) says how solid
+  that majority is.
 - `gold_shifted_families.csv` -- just the `gold_shifted=True` rows from
   above, projected to `empirical_gold_label` instead of `majority_label`.
   **These are not failed families** -- they're families where the

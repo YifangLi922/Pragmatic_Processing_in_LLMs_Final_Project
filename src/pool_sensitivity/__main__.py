@@ -64,11 +64,14 @@ testing. KEEP/EXCLUDE is a human decision made by reading these tables.
   econ/bwl/all5 pulled the family off KEEP. Use this to see whether it's
   consistently the same pool doing the dropping (e.g. always pool_econ)
   before reading anything into it -- see the caveat below.
-- `empirical_gold_core3.csv` -- one row per (family, condition) (108 rows),
-  pool_core3 only. `majority_label` is the empirical gold when
-  `has_majority` is True (None otherwise); compared against
-  `design_gold_label` to set `gold_shifted`. `margin` (top count minus
-  runner-up count) says how solid that majority is.
+- `empirical_gold_core3.csv` -- one row per (family, condition), pool_core3
+  only, **excluding every family that is EXCLUDE_BROKEN under pool_core3**
+  (so fewer than 108 rows -- a broken family has no valid empirical gold to
+  report on any of its conditions, not just the one that triggered the
+  break). `majority_label` is the empirical gold when `has_majority` is True
+  (None otherwise); compared against `design_gold_label` to set
+  `gold_shifted`. `margin` (top count minus runner-up count) says how solid
+  that majority is.
 - `gold_shifted_families.csv` -- just the `gold_shifted=True` rows from
   above, projected to `empirical_gold_label` instead of `majority_label`.
   **These are not failed families** -- they're families where the
@@ -138,9 +141,18 @@ def run_all(items: list[dict], output_dir: str) -> None:
             if pool_name == "core3":
                 core3_condition_results = condition_results
 
+        # A family EXCLUDE_BROKEN under pool_core3 has at least one condition
+        # whose "majority" is the distractor role -- there's no real semantic
+        # reading to call gold on for that family, so it must not appear in
+        # any gold-related output, even a condition where the raw numbers
+        # would otherwise look like an ordinary shift (see e.g. F31, where
+        # bare/ba both collapsed to distractor but ma's neutral->confirmation
+        # shift would look perfectly ordinary read in isolation).
+        core3_broken = classifications["core3"]["class"] == "EXCLUDE_BROKEN"
         family_gold_rows = [empirical_gold_row(fam_items[c]) for c in CONDITIONS]
-        gold_rows.extend(family_gold_rows)
-        family_gold_shifted = any(r["gold_shifted"] for r in family_gold_rows)
+        if not core3_broken:
+            gold_rows.extend(family_gold_rows)
+        family_gold_shifted = (not core3_broken) and any(r["gold_shifted"] for r in family_gold_rows)
 
         stable_keep = all(classifications[pool]["class"] == "KEEP" for pool in POOLS)
         grid_rows.append(
