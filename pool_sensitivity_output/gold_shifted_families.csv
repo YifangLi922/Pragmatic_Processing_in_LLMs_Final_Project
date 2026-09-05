@@ -1,0 +1,12 @@
+family_id,condition,design_gold_label,empirical_gold_label,margin
+F06,ba,confirmation,statement,1
+F09,ma,neutral,distractor,1
+F11,ma,neutral,confirmation,1
+F12,ma,neutral,confirmation,3
+F13,ma,neutral,confirmation,1
+F18,ba,confirmation,neutral,1
+F31,bare,statement,distractor,1
+F31,ba,confirmation,distractor,1
+F31,ma,neutral,confirmation,1
+F33,ba,confirmation,statement,1
+F33,ma,neutral,confirmation,1
