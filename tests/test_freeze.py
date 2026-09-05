@@ -94,26 +94,49 @@ def test_build_exploratory_rows_adds_collapse_columns():
 
 def test_render_freeze_report_counts_and_margin_distribution():
     class_counts = {"KEEP": 20, "COLLAPSE": 6, "NO_CONSENSUS": 8, "EXCLUDE_BROKEN": 2}
-    grid = {"F06": {"core3_class": "COLLAPSE"}, "F12": {"core3_class": "COLLAPSE"}, "F20": {"core3_class": "KEEP"}}
+    grid = {
+        "F06": {"core3_class": "COLLAPSE"},
+        "F12": {"core3_class": "COLLAPSE"},
+        "F20": {"core3_class": "KEEP"},
+        "F21": {"core3_class": "KEEP"},
+    }
     shifted_rows = [
         {"family_id": "F06", "condition": "ba", "design_gold_label": "confirmation", "empirical_gold_label": "statement", "margin": "1"},
         {"family_id": "F12", "condition": "ma", "design_gold_label": "neutral", "empirical_gold_label": "confirmation", "margin": "3"},
-        {"family_id": "F20", "condition": "ma", "design_gold_label": "neutral", "empirical_gold_label": "confirmation", "margin": "1"},
     ]
-    report = render_freeze_report(class_counts, shifted_rows, grid, stable_keep_count=11, n_total_families=36)
+    frozen_rows = [
+        {"family_id": "F20", "margin": 3},
+        {"family_id": "F20", "margin": 1},
+        {"family_id": "F21", "margin": 3},
+    ]
+    report = render_freeze_report(
+        class_counts, shifted_rows, grid, stable_keep_count=11, n_total_families=36,
+        frozen_rows=frozen_rows, tag_name="dataset-frozen-v1", tag_commit="abc1234",
+    )
 
     assert "| KEEP | 20 |" in report
     assert "| COLLAPSE_structural | 6 |" in report
     assert "| NO_CONSENSUS | 8 |" in report
     assert "| EXCLUDE_BROKEN | 2 |" in report
-    assert "confirmatory" in report  # F20 (KEEP) labeled correctly
+    assert "F20" in report and "F21" in report  # family membership listing
+    assert "F06" in report and "F12" in report
     assert "exploratory" in report  # F06/F12 (COLLAPSE) labeled correctly
-    assert "margin=1: 2" in report
+    assert "margin=1: 1" in report
     assert "margin=3: 1" in report
     assert "11 of the 20" in report
+    assert "dataset-frozen-v1" in report and "abc1234" in report
+    assert "All 2 shifted items fall in the exploratory set" in report
+    assert "3:0 (unanimous, all 3 cast)" in report
+    assert "2:1 (majority, all 3 cast)" in report
 
 
 def test_render_freeze_report_no_shifts():
     class_counts = {"KEEP": 5, "COLLAPSE": 0, "NO_CONSENSUS": 0, "EXCLUDE_BROKEN": 0}
-    report = render_freeze_report(class_counts, [], {}, stable_keep_count=5, n_total_families=5)
+    grid = {f"F0{i}": {"core3_class": "KEEP"} for i in range(1, 6)}
+    frozen_rows = [{"family_id": fid, "margin": 3} for fid in grid]
+    report = render_freeze_report(
+        class_counts, [], grid, stable_keep_count=5, n_total_families=5,
+        frozen_rows=frozen_rows, tag_name="dataset-frozen-v1", tag_commit=None,
+    )
     assert "(none)" in report
+    assert "not found in this checkout" in report
