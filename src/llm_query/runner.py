@@ -84,6 +84,9 @@ def run(
     run_date: str | None = None,
     sleep_fn=time.sleep,
     prompt_builder=build_prompt,
+    record_builder=_build_record,
+    max_consecutive_failures: int = 10,
+    verbose: bool = False,
 ) -> Path:
     """Run every (item, model) pair not already successfully recorded.
 
@@ -94,10 +97,16 @@ def run(
     the main experiment's build_prompt; callers that need a different
     prompt (e.g. the context-only ablation's build_context_only_prompt)
     pass their own rather than this module growing a second run loop.
+    `record_builder(item, model_cfg, prompt, run_date, temperature, response,
+    answer_letter) -> dict` likewise defaults to this module's own record
+    shape; a caller needing a different one (e.g. the main experiment's
+    schema with hit_gold/gold_letter/timestamp already joined in) passes its
+    own rather than post-processing this module's output into another shape.
     """
     items = load_items(items_path)
     return run_items(
-        items, output_path, model_names, config_path, provider_factory, run_date, sleep_fn, prompt_builder
+        items, output_path, model_names, config_path, provider_factory, run_date, sleep_fn,
+        prompt_builder, record_builder, max_consecutive_failures, verbose,
     )
 
 
@@ -110,11 +119,26 @@ def run_items(
     run_date: str | None = None,
     sleep_fn=time.sleep,
     prompt_builder=build_prompt,
+    record_builder=_build_record,
+    max_consecutive_failures: int = 10,
+    verbose: bool = False,
 ) -> Path:
     """Same loop as run(), taking an already-loaded item list instead of a
     JSON file path -- so callers that build items in memory (e.g. joining
-    frozen CSVs with reconstructed item text for the ablation) don't need to
-    round-trip through a temp file just to reuse this function.
+    frozen CSVs with reconstructed item text for the ablation/main
+    experiment) don't need to round-trip through a temp file just to reuse
+    this function.
+
+    Per-call retry/backoff (429/5xx/timeout) happens inside the provider
+    (see providers/openrouter.py) and is unconditionally reused here. On top
+    of that, this loop tracks *consecutive* failures per model: once a
+    single model hits `max_consecutive_failures` in a row (a broken
+    model_id, an account issue, etc. -- not a one-off flaky call, which the
+    provider's own retries already absorb), the rest of that model's items
+    are skipped for *this run* rather than each burning through the
+    provider's full retry budget for a foregone conclusion. Nothing is
+    written for the skipped items, so a later run (once the model_id/account
+    issue is fixed) will retry them normally via the done-set skip logic.
     """
     config = load_config(config_path) if config_path else load_config()
     models = config["models"]
@@ -134,6 +158,8 @@ def run_items(
             return OpenRouterProvider()
 
     done = load_done_keys(output_path)
+    total_pairs = len(models) * len(items)
+    n_done = len(done)
     providers_by_model: dict[str, Provider] = {}
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -145,18 +171,27 @@ def run_items(
                 providers_by_model[model_name] = provider_factory(model_cfg)
             provider = providers_by_model[model_name]
             is_free = model_cfg.get("is_free", True)
+            consecutive_failures = 0
 
             for item in items:
                 key = (item["item_id"], model_name)
                 if key in done:
                     continue
 
+                if consecutive_failures >= max_consecutive_failures:
+                    if verbose:
+                        print(
+                            f"[{model_name}] {consecutive_failures} consecutive failures -- "
+                            f"skipping remaining items for this run (will retry next run)."
+                        )
+                    break
+
                 prompt = prompt_builder(item)
 
                 if not is_free:
                     estimated = cost_guard.estimate(model_cfg, prompt)
                     if not cost_guard.can_spend(estimated):
-                        blocked = LLMResponse(
+                        response = LLMResponse(
                             raw_response="",
                             logprobs=None,
                             prompt_tokens=None,
@@ -166,10 +201,15 @@ def run_items(
                                 f"(spent so far ${cost_guard.spent_usd:.4f})"
                             ),
                         )
-                        record = _build_record(item, model_cfg, prompt, run_date, temperature,
-                                                blocked, answer_letter=None)
+                        answer_letter = None
+                        record = record_builder(item, model_cfg, prompt, run_date, temperature,
+                                                 response, answer_letter)
                         out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
                         out_f.flush()
+                        consecutive_failures += 1
+                        n_done += 1
+                        if verbose:
+                            print(f"[{n_done}/{total_pairs}] {model_name} {item['item_id']}: cost guard blocked")
                         continue
 
                 start = time.monotonic()
@@ -180,10 +220,16 @@ def run_items(
                     cost_guard.record_actual(model_cfg, response)
 
                 answer_letter = parse_answer(response.raw_response) if response.error is None else None
-                record = _build_record(item, model_cfg, prompt, run_date, temperature,
-                                        response, answer_letter)
+                record = record_builder(item, model_cfg, prompt, run_date, temperature,
+                                         response, answer_letter)
                 out_f.write(json.dumps(record, ensure_ascii=False) + "\n")
                 out_f.flush()
+
+                n_done += 1
+                consecutive_failures = 0 if response.error is None else consecutive_failures + 1
+                if verbose:
+                    status = "OK" if response.error is None else f"ERROR: {response.error[:80]}"
+                    print(f"[{n_done}/{total_pairs}] {model_name} {item['item_id']}: {status}")
 
                 elapsed = time.monotonic() - start
                 remaining = min_interval_seconds - elapsed

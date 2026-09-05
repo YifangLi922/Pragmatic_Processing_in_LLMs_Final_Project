@@ -35,17 +35,25 @@ def load_question_lookup(reconstructed_path: str) -> dict[str, str]:
 
 
 def _base_ablation_item(row: dict, set_name: str, question_lookup: dict[str, str]) -> dict:
+    """`sentence` is carried through even though build_context_only_prompt()
+    never reads it -- this same loader is reused by the main experiment
+    (src.main_experiment), which needs it for build_prompt(). Keeping one
+    loader for both means the two runs are guaranteed to see the exact same
+    item set/order/text, which is what makes them comparable item-for-item.
+    """
     option_semantics = parse_option_semantic_map(row["option_semantic_map"])
     return {
         "item_id": row["item_id"],
         "family_id": row["family_id"],
         "particle_condition": row["condition"],
         "context": row["context_text"],
+        "sentence": row["target_sentence"],
         "question": question_lookup[row["item_id"]],
         "options": {letter: row[f"option_{letter}"] for letter in _LETTERS},
         "option_semantics": option_semantics,
         # Ablation-only bookkeeping, ignored by src.llm_query.runner but read
-        # back by src.ablation.analysis when joining the query results.
+        # back by src.ablation.analysis / src.main_experiment when joining
+        # the query results.
         "set": set_name,
         "gold_letter": row["gold_letter"],
         "gold_semantic": row["gold_semantic"],
