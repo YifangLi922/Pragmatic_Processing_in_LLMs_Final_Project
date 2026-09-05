@@ -5,9 +5,9 @@ import pytest
 
 from src.llm_query.cost_guard import CostGuard
 from src.llm_query.parser import parse_answer
-from src.llm_query.prompt import build_prompt
+from src.llm_query.prompt import build_context_only_prompt, build_prompt
 from src.llm_query.providers.mock import MockProvider
-from src.llm_query.runner import load_done_keys, run
+from src.llm_query.runner import load_done_keys, run, run_items
 
 FAKE_ITEMS_PATH = Path(__file__).resolve().parents[1] / "data" / "fake_items.json"
 
@@ -35,6 +35,18 @@ def test_build_prompt_fills_all_fields():
     assert "A) 选项A" in prompt
     assert "D) 选项D" in prompt
     assert prompt.rstrip().endswith("答案：")
+
+
+def test_build_context_only_prompt_omits_sentence_but_keeps_rest():
+    prompt = build_context_only_prompt(_sample_item())
+    assert "情景：情景内容" in prompt
+    assert "他明天要出差" not in prompt  # the sentence itself never appears
+    assert "句子" not in prompt  # the label line is dropped, not left blank
+    assert "问题：问题内容" in prompt
+    assert "A) 选项A" in prompt
+    assert "D) 选项D" in prompt
+    assert prompt.rstrip().endswith("答案：")
+    assert prompt.startswith("阅读下面的对话情景，判断说话人的态度，只输出选项字母。")
 
 
 # ---- parser.py ------------------------------------------------------------
@@ -125,6 +137,30 @@ def test_runner_smoke_creates_one_record_per_item(tmp_path):
     assert all(r["model_answer_letter"] in {"A", "B", "C", "D"} for r in records)
     assert all(r["model_answer_semantic"] is not None for r in records)
     assert all(r["error"] is None for r in records)
+
+
+def test_run_items_accepts_in_memory_list_and_custom_prompt_builder(tmp_path):
+    output_path = tmp_path / "results.jsonl"
+    seen_prompts = []
+
+    class RecordingMockProvider(MockProvider):
+        def call(self, model_id, prompt, temperature=0.0):
+            seen_prompts.append(prompt)
+            return super().call(model_id, prompt, temperature)
+
+    run_items(
+        items=[_sample_item()],
+        output_path=output_path,
+        model_names=["deepseek-v3"],
+        provider_factory=lambda model_cfg: RecordingMockProvider(),
+        sleep_fn=lambda seconds: None,
+        prompt_builder=build_context_only_prompt,
+    )
+
+    records = [json.loads(line) for line in output_path.read_text(encoding="utf-8").strip().splitlines()]
+    assert len(records) == 1
+    assert records[0]["error"] is None
+    assert "他明天要出差" not in seen_prompts[0]  # confirms the ablation prompt builder was actually used
 
 
 def test_runner_resume_skips_already_successful_pairs(tmp_path):

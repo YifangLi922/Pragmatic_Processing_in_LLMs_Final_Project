@@ -83,16 +83,40 @@ def run(
     provider_factory=None,
     run_date: str | None = None,
     sleep_fn=time.sleep,
+    prompt_builder=build_prompt,
 ) -> Path:
     """Run every (item, model) pair not already successfully recorded.
 
     `provider_factory(model_cfg) -> Provider` builds one provider instance
     per model (so tests can pass a MockProvider); defaults to a real
     OpenRouterProvider, built lazily so a mock-only smoke test never needs
-    OPENROUTER_API_KEY to be set.
+    OPENROUTER_API_KEY to be set. `prompt_builder(item) -> str` defaults to
+    the main experiment's build_prompt; callers that need a different
+    prompt (e.g. the context-only ablation's build_context_only_prompt)
+    pass their own rather than this module growing a second run loop.
+    """
+    items = load_items(items_path)
+    return run_items(
+        items, output_path, model_names, config_path, provider_factory, run_date, sleep_fn, prompt_builder
+    )
+
+
+def run_items(
+    items: list[dict],
+    output_path: Path | str,
+    model_names: list[str] | None = None,
+    config_path: Path | str | None = None,
+    provider_factory=None,
+    run_date: str | None = None,
+    sleep_fn=time.sleep,
+    prompt_builder=build_prompt,
+) -> Path:
+    """Same loop as run(), taking an already-loaded item list instead of a
+    JSON file path -- so callers that build items in memory (e.g. joining
+    frozen CSVs with reconstructed item text for the ablation) don't need to
+    round-trip through a temp file just to reuse this function.
     """
     config = load_config(config_path) if config_path else load_config()
-    items = load_items(items_path)
     models = config["models"]
     if model_names is not None:
         models = [m for m in models if m["name"] in model_names]
@@ -127,7 +151,7 @@ def run(
                 if key in done:
                     continue
 
-                prompt = build_prompt(item)
+                prompt = prompt_builder(item)
 
                 if not is_free:
                     estimated = cost_guard.estimate(model_cfg, prompt)
