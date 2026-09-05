@@ -1,0 +1,14 @@
+family_id,pool,collapse_type,collapse_pair,collapse_label
+F06,core3,structural,bare=ba,statement
+F08,econ,structural,ba=ma,confirmation
+F09,core3,distractor,,
+F11,core3,structural,ba=ma,confirmation
+F12,core3,structural,ba=ma,confirmation
+F12,econ,structural,ba=ma,confirmation
+F12,bwl,structural,ba=ma,confirmation
+F12,all5,structural,ba=ma,confirmation
+F13,core3,structural,ba=ma,confirmation
+F18,core3,structural,ba=ma,neutral
+F26,econ,structural,ba=ma,confirmation
+F31,core3,distractor,,
+F33,core3,structural,bare=ba,statement
