@@ -1,0 +1,13 @@
+set,model,n_valid_raw,accuracy_raw,n_valid_purified,accuracy_purified,n_valid_sensitivity,accuracy_sensitivity
+confirmatory,deepseek-r1-0528,60,0.9,36,0.8888888888888888,17,0.8823529411764706
+confirmatory,deepseek-v3,60,0.8,34,0.8235294117647058,14,0.9285714285714286
+confirmatory,gemini-3-flash-preview,60,0.8166666666666667,30,1.0,15,1.0
+confirmatory,gemma-4-31b,60,0.7833333333333333,47,0.8297872340425532,24,0.7916666666666666
+confirmatory,mistral-small-3-24b,60,0.9166666666666666,40,0.95,20,1.0
+confirmatory,qwen3-next-80b,60,0.7,34,0.7647058823529411,15,0.8
+exploratory,deepseek-r1-0528,18,0.5,12,0.6666666666666666,,
+exploratory,deepseek-v3,18,0.5555555555555556,10,0.8,,
+exploratory,gemini-3-flash-preview,18,0.6111111111111112,10,0.7,,
+exploratory,gemma-4-31b,18,0.6111111111111112,16,0.6875,,
+exploratory,mistral-small-3-24b,18,0.6111111111111112,11,0.8181818181818182,,
+exploratory,qwen3-next-80b,18,0.5555555555555556,10,0.6,,

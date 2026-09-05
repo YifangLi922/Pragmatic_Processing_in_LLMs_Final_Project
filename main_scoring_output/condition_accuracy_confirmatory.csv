@@ -1,0 +1,7 @@
+model,n_valid_overall,accuracy_overall,n_valid_bare,accuracy_bare,n_valid_ba,accuracy_ba,n_valid_ma,accuracy_ma
+deepseek-r1-0528,60,0.9,20,0.95,20,1.0,20,0.75
+deepseek-v3,60,0.8,20,1.0,20,0.4,20,1.0
+gemini-3-flash-preview,60,0.8166666666666667,20,0.9,20,1.0,20,0.55
+gemma-4-31b,60,0.7833333333333333,20,1.0,20,1.0,20,0.35
+mistral-small-3-24b,60,0.9166666666666666,20,0.85,20,0.9,20,1.0
+qwen3-next-80b,60,0.7,20,1.0,20,0.65,20,0.45

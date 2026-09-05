@@ -1,0 +1,13 @@
+set,model,n_valid_pairs,n_used_target,used_target_rate,n_used_target_ablation_parse_failed,n_used_target_real_alternative
+confirmatory,deepseek-r1-0528,60,36,0.6,0,36
+confirmatory,deepseek-v3,60,34,0.5666666666666667,1,33
+confirmatory,gemini-3-flash-preview,60,30,0.5,0,30
+confirmatory,gemma-4-31b,60,47,0.7833333333333333,35,12
+confirmatory,mistral-small-3-24b,60,40,0.6666666666666666,9,31
+confirmatory,qwen3-next-80b,60,34,0.5666666666666667,0,34
+exploratory,deepseek-r1-0528,18,12,0.6666666666666666,0,12
+exploratory,deepseek-v3,18,10,0.5555555555555556,1,9
+exploratory,gemini-3-flash-preview,18,10,0.5555555555555556,0,10
+exploratory,gemma-4-31b,18,16,0.8888888888888888,11,5
+exploratory,mistral-small-3-24b,18,11,0.6111111111111112,3,8
+exploratory,qwen3-next-80b,18,10,0.5555555555555556,0,10
