@@ -1,0 +1,4 @@
+margin,margin_label,n_items,n_valid,accuracy
+3,"3:0 (unanimous, all 3 cast)",38,228,0.8201754385964912
+2,"2:0 (unanimous, 1 abstention)",5,30,0.8
+1,"2:1 (majority, all 3 cast)",17,102,0.8235294117647058

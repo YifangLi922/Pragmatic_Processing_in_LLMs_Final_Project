@@ -1,0 +1,19 @@
+model,margin,margin_label,n_items,n_valid,accuracy
+deepseek-r1-0528,3,"3:0 (unanimous, all 3 cast)",38,38,0.8947368421052632
+deepseek-r1-0528,2,"2:0 (unanimous, 1 abstention)",5,5,1.0
+deepseek-r1-0528,1,"2:1 (majority, all 3 cast)",17,17,0.8823529411764706
+deepseek-v3,3,"3:0 (unanimous, all 3 cast)",38,38,0.868421052631579
+deepseek-v3,2,"2:0 (unanimous, 1 abstention)",5,5,0.8
+deepseek-v3,1,"2:1 (majority, all 3 cast)",17,17,0.6470588235294118
+gemini-3-flash-preview,3,"3:0 (unanimous, all 3 cast)",38,38,0.7631578947368421
+gemini-3-flash-preview,2,"2:0 (unanimous, 1 abstention)",5,5,1.0
+gemini-3-flash-preview,1,"2:1 (majority, all 3 cast)",17,17,0.8823529411764706
+gemma-4-31b,3,"3:0 (unanimous, all 3 cast)",38,38,0.8157894736842105
+gemma-4-31b,2,"2:0 (unanimous, 1 abstention)",5,5,0.6
+gemma-4-31b,1,"2:1 (majority, all 3 cast)",17,17,0.7647058823529411
+mistral-small-3-24b,3,"3:0 (unanimous, all 3 cast)",38,38,0.868421052631579
+mistral-small-3-24b,2,"2:0 (unanimous, 1 abstention)",5,5,1.0
+mistral-small-3-24b,1,"2:1 (majority, all 3 cast)",17,17,1.0
+qwen3-next-80b,3,"3:0 (unanimous, all 3 cast)",38,38,0.7105263157894737
+qwen3-next-80b,2,"2:0 (unanimous, 1 abstention)",5,5,0.4
+qwen3-next-80b,1,"2:1 (majority, all 3 cast)",17,17,0.7647058823529411
