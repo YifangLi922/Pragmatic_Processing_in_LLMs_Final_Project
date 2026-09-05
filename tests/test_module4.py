@@ -6,6 +6,7 @@ import pytest
 from src.llm_query.cost_guard import CostGuard
 from src.llm_query.parser import parse_answer
 from src.llm_query.prompt import build_context_only_prompt, build_prompt
+from src.llm_query.providers.base import LLMResponse
 from src.llm_query.providers.mock import MockProvider
 from src.llm_query.runner import load_done_keys, run, run_items
 
@@ -161,6 +162,73 @@ def test_run_items_accepts_in_memory_list_and_custom_prompt_builder(tmp_path):
     assert len(records) == 1
     assert records[0]["error"] is None
     assert "他明天要出差" not in seen_prompts[0]  # confirms the ablation prompt builder was actually used
+
+
+def test_run_items_circuit_breaker_skips_rest_of_model_after_consecutive_failures(tmp_path):
+    output_path = tmp_path / "results.jsonl"
+
+    class AlwaysFailProvider(MockProvider):
+        def call(self, model_id, prompt, temperature=0.0):
+            return LLMResponse(raw_response="", logprobs=None, prompt_tokens=None,
+                                completion_tokens=None, error="simulated persistent failure")
+
+    run(
+        items_path=FAKE_ITEMS_PATH, output_path=output_path, model_names=["deepseek-v3"],
+        provider_factory=lambda model_cfg: AlwaysFailProvider(),
+        sleep_fn=lambda s: None, max_consecutive_failures=2,
+    )
+
+    records = [json.loads(line) for line in output_path.read_text(encoding="utf-8").strip().splitlines()]
+    assert len(records) == 2  # breaker trips after 2 consecutive failures, 3 remaining items untouched
+    assert all(r["error"] is not None for r in records)
+
+    # Nothing was written for the skipped items, so a later run retries them
+    # rather than treating them as permanently failed.
+    written_ids = {r["item_id"] for r in records}
+    assert written_ids != {"F00_bare", "F00_ba", "F00_ma", "F01_bare", "F01_ba"}
+
+
+def test_run_items_consecutive_failure_count_resets_on_success(tmp_path):
+    output_path = tmp_path / "results.jsonl"
+
+    class FailOnceThenSucceed(MockProvider):
+        def __init__(self):
+            super().__init__()
+            self._calls = 0
+
+        def call(self, model_id, prompt, temperature=0.0):
+            self._calls += 1
+            if self._calls % 3 == 1:  # fail every third call, never twice in a row
+                return LLMResponse(raw_response="", logprobs=None, prompt_tokens=None,
+                                    completion_tokens=None, error="transient")
+            return super().call(model_id, prompt, temperature)
+
+    run(
+        items_path=FAKE_ITEMS_PATH, output_path=output_path, model_names=["deepseek-v3"],
+        provider_factory=lambda model_cfg: FailOnceThenSucceed(),
+        sleep_fn=lambda s: None, max_consecutive_failures=2,
+    )
+
+    records = [json.loads(line) for line in output_path.read_text(encoding="utf-8").strip().splitlines()]
+    assert len(records) == 5  # breaker never trips: failures are isolated, never 2 in a row
+
+
+def test_run_items_uses_custom_record_builder(tmp_path):
+    output_path = tmp_path / "results.jsonl"
+
+    def tiny_record_builder(item, model_cfg, prompt, run_date, temperature, response, answer_letter):
+        return {"item_id": item["item_id"], "model": model_cfg["name"], "letter": answer_letter,
+                "error": response.error}
+
+    run(
+        items_path=FAKE_ITEMS_PATH, output_path=output_path, model_names=["deepseek-v3"],
+        provider_factory=lambda model_cfg: MockProvider(),
+        sleep_fn=lambda s: None, record_builder=tiny_record_builder,
+    )
+
+    records = [json.loads(line) for line in output_path.read_text(encoding="utf-8").strip().splitlines()]
+    assert len(records) == 5
+    assert set(records[0].keys()) == {"item_id", "model", "letter", "error"}
 
 
 def test_runner_resume_skips_already_successful_pairs(tmp_path):
