@@ -11,7 +11,7 @@ from src.agreement.rates import (
     no_valid_option_rate_by_condition,
 )
 
-FAKE_ANNOTATIONS_PATH = Path(__file__).resolve().parents[1] / "data" / "fake_annotations.json"
+FAKE_ANNOTATIONS_PATH = Path(__file__).resolve().parents[2] / "data" / "fake_annotations.json"
 
 
 def load_fake_annotations() -> list[dict]:

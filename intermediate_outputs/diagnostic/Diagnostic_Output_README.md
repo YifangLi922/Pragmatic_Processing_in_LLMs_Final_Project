@@ -7,7 +7,7 @@ inclusion, or runs significance tests.
 ## Layout
 
 ```
-diagnostic_output/
+intermediate_outputs/diagnostic/
   diagnostic_summary_all_annotators.csv   <- start here (see below)
   econ/
     mode_A/                               <- primary no-option handling

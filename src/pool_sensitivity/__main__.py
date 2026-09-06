@@ -7,7 +7,7 @@ gold shift detection based on pool_core3 alone.
 Usage:
     python -m src.pool_sensitivity \\
         --reconstructed data/reconstructed_5ann.json \\
-        --output-dir pool_sensitivity_output
+        --output-dir intermediate_outputs/pool_sensitivity
 """
 
 import argparse
@@ -94,7 +94,7 @@ testing. KEEP/EXCLUDE is a human decision made by reading these tables.
 - **Treating BWL as a validated annotator.** BWL appears only in pool_bwl
   and pool_all5, and only as a stress test -- checking whether this
   annotator, independent of the response-process concerns raised elsewhere
-  (see diagnostic_output/), would overturn core3's classification if
+  (see intermediate_outputs/diagnostic/), would overturn core3's classification if
   included. Appearing in these pools is not an endorsement of BWL's labels.
 """
 

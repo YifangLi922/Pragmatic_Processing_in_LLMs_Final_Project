@@ -1,6 +1,6 @@
 # Dataset Freeze Report
 
-Generated from `pool_sensitivity_output/` (pool_core3). Total families: 36.
+Generated from `intermediate_outputs/pool_sensitivity/` (pool_core3). Total families: 36.
 After this report and the two frozen CSVs are committed and tagged, the two CSVs are not edited again.
 
 ## Provenance
@@ -33,11 +33,11 @@ Tag `dataset-frozen-v1` -> commit `4f3e11d49ad7ed82e2e84c255be346ad05b5ba92`. fr
 - **NO_CONSENSUS** (8): at least one of bare/+ba/+ma has no reference-pool majority at all under pool_core3 (tie, 1-1-1 split, or too few cast votes).
 - **EXCLUDE_BROKEN** (2): at least one condition's core3 majority landed on the DISTRACTOR role -- the item failed to activate any of its three target semantics on that condition, so the whole family is excluded even where another condition's numbers would otherwise look like an ordinary gold shift.
 
-COLLAPSE_structural under a *different* pool (e.g. pool_econ) that is NO_CONSENSUS or KEEP under core3 is not counted as an exclusion here -- pool_core3 is the pool this freeze decision is based on. See `pool_sensitivity_output/pool_sensitivity_grid.csv` for the full per-pool picture.
+COLLAPSE_structural under a *different* pool (e.g. pool_econ) that is NO_CONSENSUS or KEEP under core3 is not counted as an exclusion here -- pool_core3 is the pool this freeze decision is based on. See `intermediate_outputs/pool_sensitivity/pool_sensitivity_grid.csv` for the full per-pool picture.
 
 ## stable_keep_all_pools
 
-11 of the 20 core3-KEEP families are also KEEP under pool_econ, pool_bwl, and pool_all5 (`stable_keep_all_pools=True`). All are still included in `frozen_dataset.csv` -- core3 alone decides membership and gold here -- but the column flags which ones don't survive a different pool. See `pool_sensitivity_output/core3_keep_dropouts.csv` for which pool(s) disagree on each of the remaining 9.
+11 of the 20 core3-KEEP families are also KEEP under pool_econ, pool_bwl, and pool_all5 (`stable_keep_all_pools=True`). All are still included in `frozen_dataset.csv` -- core3 alone decides membership and gold here -- but the column flags which ones don't survive a different pool. See `intermediate_outputs/pool_sensitivity/core3_keep_dropouts.csv` for which pool(s) disagree on each of the remaining 9.
 
 ## Confirmatory set (frozen_dataset.csv) consensus-strength distribution
 
@@ -70,6 +70,6 @@ A margin of 1 (2-1 split among 3 cast votes) is the weakest possible majority; t
 
 ## Context-only ablation validation
 
-Before freezing, a context-only ablation (target sentence removed, everything else identical) was run against all 20 confirmatory families to check whether the context alone leaks the answer. Result: **bare-condition shortcut rate is 0%** -- context alone does not leak the gold answer on any bare item. The shortcut_risk flags that did appear were concentrated on the +ba condition (8/20 families) and a few +ma items (3/20); tracing those back to individual model responses showed they stem from a model-level answer-category preference for the confirmation label when information is missing, not from a context cue specific to those items -- see ablation_output/ablation_summary_confirmatory.md. This is a model behavior artifact, not a stimulus defect, so **all 20 families were retained** rather than excising the flagged ones.
+Before freezing, a context-only ablation (target sentence removed, everything else identical) was run against all 20 confirmatory families to check whether the context alone leaks the answer. Result: **bare-condition shortcut rate is 0%** -- context alone does not leak the gold answer on any bare item. The shortcut_risk flags that did appear were concentrated on the +ba condition (8/20 families) and a few +ma items (3/20); tracing those back to individual model responses showed they stem from a model-level answer-category preference for the confirmation label when information is missing, not from a context cue specific to those items -- see intermediate_outputs/ablation/ablation_summary_confirmatory.md. This is a model behavior artifact, not a stimulus defect, so **all 20 families were retained** rather than excising the flagged ones.
 
-Whether models actually rely on the target sentence (rather than just being capable of guessing without it) was further verified after running the main experiment, via a per-model with/without-target answer comparison (see main_scoring_output/used_target_by_model.csv): every model changed its answer on a substantial share of items once the target sentence was shown (48-67% on the confirmatory set, once ablation non-answers are correctly excluded from that denominator), confirming the sentence is doing real work rather than being redundant with context.
+Whether models actually rely on the target sentence (rather than just being capable of guessing without it) was further verified after running the main experiment, via a per-model with/without-target answer comparison (see results/main_scoring/target_sentence_delta/used_target_by_model.csv): every model changed its answer on a substantial share of items once the target sentence was shown (48-67% on the confirmatory set, once ablation non-answers are correctly excluded from that denominator), confirming the sentence is doing real work rather than being redundant with context.

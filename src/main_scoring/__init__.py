@@ -1,6 +1,6 @@
 """Main-experiment scoring: condition accuracy, margin-stratified accuracy,
 target-sentence delta analysis (vs. the context-only ablation), and
-per-model confusion matrices -- all against main_experiment_output/
+per-model confusion matrices -- all against intermediate_outputs/main_experiment/
 main_results.csv, gold taken verbatim from the frozen CSVs (already joined
 into main_results.csv's gold_letter/gold_semantic columns at query time, not
 re-derived here).

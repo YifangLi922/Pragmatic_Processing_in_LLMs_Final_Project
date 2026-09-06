@@ -5,7 +5,7 @@ from src.gold.config import GoldConfig
 from src.gold.exclusion import evaluate_families, exclusion_report
 from src.gold.majority_vote import consensus_tier, majority_vote
 
-FAKE_ANNOTATIONS_PATH = Path(__file__).resolve().parents[1] / "data" / "fake_annotations.json"
+FAKE_ANNOTATIONS_PATH = Path(__file__).resolve().parents[2] / "data" / "fake_annotations.json"
 
 
 def load_fake_annotations() -> list[dict]:

@@ -1,4 +1,4 @@
-"""Readers for the pool_sensitivity_output/ CSVs this freeze step joins
+"""Readers for the intermediate_outputs/pool_sensitivity/ CSVs this freeze step joins
 against. Kept separate from build.py so the join logic is testable against
 plain dicts without touching the filesystem.
 """
