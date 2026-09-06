@@ -8,8 +8,11 @@ from src.main_scoring.confusion import confusion_matrices_by_model
 from src.main_scoring.delta import (
     build_delta_rows,
     count_missing_ablation_answer,
+    count_missing_ablation_answer_by_condition,
+    update_precision_by_condition,
     update_precision_comparison,
     used_target_summary,
+    used_target_summary_by_condition,
 )
 from src.main_scoring.sources import PreconditionError, check_preconditions
 
@@ -195,6 +198,57 @@ def test_update_precision_comparison_with_and_without_sensitivity():
     with_sensitivity = update_precision_comparison(delta_rows, raw_by_model, shortcut_families={"F01"})
     assert with_sensitivity[0]["n_updates_sensitivity"] == 1  # F01 excluded, F02 remains
     assert with_sensitivity[0]["update_precision_sensitivity"] == 0.0
+
+
+def test_used_target_summary_by_condition_splits_cells():
+    delta_rows = [
+        {"model": "modelA", "condition": "bare", "family_id": "F01", "used_target": True, "hit_gold": True},
+        {"model": "modelA", "condition": "bare", "family_id": "F02", "used_target": False, "hit_gold": True},
+        {"model": "modelA", "condition": "ma", "family_id": "F03", "used_target": True, "hit_gold": False},
+    ]
+    missing = {("modelA", "bare"): 1, ("modelA", "ba"): 2}
+    table = used_target_summary_by_condition(delta_rows, missing)
+    by_cell = {(r["model"], r["condition"]): r for r in table}
+
+    assert by_cell[("modelA", "bare")]["n_valid_pairs"] == 2
+    assert by_cell[("modelA", "bare")]["n_used_target"] == 1
+    assert by_cell[("modelA", "bare")]["used_target_rate"] == 0.5
+    assert by_cell[("modelA", "bare")]["n_excluded_no_ablation_answer"] == 1
+    assert by_cell[("modelA", "ma")]["n_valid_pairs"] == 1
+    # a condition with only missing-ablation exclusions and no delta rows still surfaces
+    assert by_cell[("modelA", "ba")]["n_valid_pairs"] == 0
+    assert by_cell[("modelA", "ba")]["used_target_rate"] is None
+    assert by_cell[("modelA", "ba")]["n_excluded_no_ablation_answer"] == 2
+
+
+def test_count_missing_ablation_answer_by_condition():
+    main_rows = [
+        _main_row("F01_bare", "F01", "bare", "confirmatory", "modelA", "C", "statement", "C", "statement"),
+        _main_row("F02_ma", "F02", "ma", "confirmatory", "modelA", "D", "confirmation", "D", "confirmation"),
+    ]
+    ablation_rows = [
+        _ablation_row("F01_bare", "confirmatory", "modelA", None, "C"),  # ablation parse-failed -- excluded
+        _ablation_row("F02_ma", "confirmatory", "modelA", "D", "D"),
+    ]
+    counts = count_missing_ablation_answer_by_condition(main_rows, ablation_rows, "confirmatory")
+    assert counts == {("modelA", "bare"): 1, ("modelA", "ma"): 0}
+
+
+def test_update_precision_by_condition_uses_per_cell_raw_accuracy():
+    delta_rows = [
+        {"model": "modelA", "condition": "bare", "family_id": "F01", "used_target": True, "hit_gold": True},
+        {"model": "modelA", "condition": "bare", "family_id": "F02", "used_target": True, "hit_gold": False},
+        {"model": "modelA", "condition": "ma", "family_id": "F03", "used_target": False, "hit_gold": True},
+    ]
+    raw_by_cell = {("modelA", "bare"): (2, 0.5), ("modelA", "ma"): (1, 1.0)}
+    table = update_precision_by_condition(delta_rows, raw_by_cell)
+    by_cell = {(r["model"], r["condition"]): r for r in table}
+
+    assert by_cell[("modelA", "bare")]["n_updates"] == 2
+    assert by_cell[("modelA", "bare")]["update_precision"] == 0.5
+    assert by_cell[("modelA", "bare")]["accuracy_raw"] == 0.5
+    assert by_cell[("modelA", "ma")]["n_updates"] == 0
+    assert by_cell[("modelA", "ma")]["update_precision"] is None
 
 
 # ---- confusion.py -------------------------------------------------------

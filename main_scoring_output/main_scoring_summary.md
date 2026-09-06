@@ -88,6 +88,8 @@ Per-model breakdown in margin_stratified_accuracy_by_model.csv. Note there are t
 | mistral-small-3-24b | 61.1% (18) | 87.5% (8) |
 | qwen3-next-80b | 55.6% (18) | 60.0% (10) |
 
+used_target_rate and update_precision broken out by condition (bare/ba/ma), one row per (model, condition), both-answered-pairs denominator per cell: see `used_target_by_model_condition.csv` and `update_precision_by_model_condition.csv`.
+
 ## 4. Confusion matrices -- confirmatory, per model
 
 Full 4x4 raw-count and row-normalized matrices are in confusion_matrix_confirmatory_counts.csv and confusion_matrix_confirmatory_rownorm.csv (rows=gold_semantic, cols=model choice). n_scored (parse_failed=False) per model:
