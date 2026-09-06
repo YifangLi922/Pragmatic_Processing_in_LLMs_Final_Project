@@ -124,8 +124,9 @@ def plot_ba_ma_scatter(condition_accuracy: dict, human_baseline: dict, output_pa
     apply_poster_style()
     models = _present_models(condition_accuracy)
 
+    pad = 4
     fig, ax = plt.subplots(figsize=(7.5, 7.5))
-    ax.plot([0, 100], [0, 100], linestyle="--", color="gray", linewidth=1.5, zorder=1, label="y = x")
+    ax.plot([-pad, 100 + pad], [-pad, 100 + pad], linestyle="--", color="gray", linewidth=1.5, zorder=1, label="y = x")
 
     for model in models:
         x = (condition_accuracy[model]["ba"]["accuracy"] or 0) * 100
@@ -142,8 +143,13 @@ def plot_ba_ma_scatter(condition_accuracy: dict, human_baseline: dict, output_pa
         ax.axhline(ma_concordance * 100, linestyle=":", color=CONDITION_COLORS["ma"], linewidth=1.5,
                    label="human concordance (ma)")
 
-    ax.set_xlim(0, 100)
-    ax.set_ylim(0, 100)
+    # Padded past [0, 100] so a point sitting exactly at 0 or 100 (several
+    # models hit 100 on ba or ma) doesn't have its marker clipped by the
+    # axes border -- ticks stay pinned to the natural 0/20/.../100 grid.
+    ax.set_xlim(-pad, 100 + pad)
+    ax.set_ylim(-pad, 100 + pad)
+    ax.set_xticks(range(0, 101, 20))
+    ax.set_yticks(range(0, 101, 20))
     ax.set_aspect("equal", adjustable="box")
     ax.set_xlabel("ba accuracy (%)")
     ax.set_ylabel("ma accuracy (%)")
