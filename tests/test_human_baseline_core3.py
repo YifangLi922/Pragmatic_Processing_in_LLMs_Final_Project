@@ -3,6 +3,7 @@ human LOO baseline). Pure Python fixtures.
 """
 
 from src.agreement.loo_baseline import loo_human_baseline
+from src.human_baseline_core3.concordance import core3_concordance, item_concordance
 from src.human_baseline_core3.filter import load_keep_family_ids, restrict_to_core3_keep_families
 
 
@@ -56,3 +57,45 @@ def test_end_to_end_matches_loo_human_baseline_on_restricted_items():
 
     assert result["bare"]["accuracy"] == 1.0  # all three core3 members agree -> every fold's other-2 majority hits
     assert result["overall"]["n_folds_total"] == 3  # Media, Materials, EngLit
+
+
+# ---- concordance.py -----------------------------------------------------
+
+
+def test_item_concordance_counts_matches_over_all_annotations():
+    item = _item(
+        "F01_ba", "F01", "ba",
+        [_annotation("Media", "confirmation"), _annotation("Materials", "confirmation"), _annotation("EngLit", "statement")],
+    )
+    assert item_concordance(item, "confirmation") == 2 / 3
+
+
+def test_item_concordance_treats_missing_answer_semantic_as_no_match():
+    item = _item(
+        "F01_ba", "F01", "ba",
+        [_annotation("Media", "confirmation"), _annotation("Materials", None), _annotation("EngLit", "confirmation")],
+    )
+    assert item_concordance(item, "confirmation") == 2 / 3
+
+
+def test_core3_concordance_averages_within_condition_including_2_1_splits():
+    # A 2:1 split (Media+Materials say "statement", EngLit says "neutral") on
+    # a bare item -- concordance should credit 2/3, unlike LOO which always
+    # scores the minority vote as a miss.
+    items = [
+        _item("F01_bare", "F01", "bare", [_annotation("Media", "statement"), _annotation("Materials", "statement"),
+                                            _annotation("EngLit", "neutral")]),
+        _item("F02_bare", "F02", "bare", [_annotation("Media", "statement"), _annotation("Materials", "statement"),
+                                            _annotation("EngLit", "statement")]),
+    ]
+    gold_by_item = {"F01_bare": "statement", "F02_bare": "statement"}
+    result = core3_concordance(items, gold_by_item)
+    assert result["bare"]["accuracy"] == (2 / 3 + 1.0) / 2
+    assert result["bare"]["n_items"] == 2
+    assert result["overall"]["n_items"] == 2
+
+
+def test_core3_concordance_skips_items_with_no_gold():
+    items = [_item("F99_bare", "F99", "bare", [_annotation("Media", "statement")])]
+    result = core3_concordance(items, gold_by_item={})
+    assert result == {}  # no item had a gold entry, so no condition ever got a value

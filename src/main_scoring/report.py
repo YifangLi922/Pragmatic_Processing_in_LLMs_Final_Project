@@ -41,6 +41,26 @@ UPDATE_PRECISION_FIELDS = [
 
 DESIGN_GOLD_FOLLOWING_FIELDS = ["model", "n_shifted_items", "n_matches_design_gold", "design_gold_following_rate"]
 
+USED_TARGET_BY_CONDITION_FIELDS = [
+    "set",
+    "model",
+    "condition",
+    "n_valid_pairs",
+    "n_used_target",
+    "used_target_rate",
+    "n_excluded_no_ablation_answer",
+]
+
+UPDATE_PRECISION_BY_CONDITION_FIELDS = [
+    "set",
+    "model",
+    "condition",
+    "n_valid_raw",
+    "accuracy_raw",
+    "n_updates",
+    "update_precision",
+]
+
 
 def _write_rows(path: str, fields: list[str], rows: list[dict]) -> None:
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -71,6 +91,14 @@ def write_update_precision(rows: list[dict], path: str) -> None:
 
 def write_design_gold_following(rows: list[dict], path: str) -> None:
     _write_rows(path, DESIGN_GOLD_FOLLOWING_FIELDS, rows)
+
+
+def write_used_target_by_condition(rows: list[dict], path: str) -> None:
+    _write_rows(path, USED_TARGET_BY_CONDITION_FIELDS, rows)
+
+
+def write_update_precision_by_condition(rows: list[dict], path: str) -> None:
+    _write_rows(path, UPDATE_PRECISION_BY_CONDITION_FIELDS, rows)
 
 
 def write_confusion_variant(matrices_by_model: dict, variant: str, path: str) -> None:
@@ -216,6 +244,13 @@ def render_summary(
             f"| {row['model']} | {_fmt_pct(row['accuracy_raw'])} ({row['n_valid_raw']}) | "
             f"{_fmt_pct(row['update_precision'])} ({row['n_updates']}) |"
         )
+    lines.append("")
+
+    lines.append(
+        "used_target_rate and update_precision broken out by condition (bare/ba/ma), one row per "
+        "(model, condition), both-answered-pairs denominator per cell: see "
+        "`used_target_by_model_condition.csv` and `update_precision_by_model_condition.csv`."
+    )
     lines.append("")
 
     lines.append("## 4. Confusion matrices -- confirmatory, per model")

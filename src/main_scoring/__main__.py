@@ -16,7 +16,15 @@ import os
 
 from .accuracy import condition_accuracy_table, margin_stratified_accuracy, margin_stratified_accuracy_by_model
 from .confusion import confusion_matrices_by_model
-from .delta import build_delta_rows, count_missing_ablation_answer, update_precision_comparison, used_target_summary
+from .delta import (
+    build_delta_rows,
+    count_missing_ablation_answer,
+    count_missing_ablation_answer_by_condition,
+    update_precision_by_condition,
+    update_precision_comparison,
+    used_target_summary,
+    used_target_summary_by_condition,
+)
 from .design_gold_following import design_gold_following_table
 from .report import (
     render_summary,
@@ -26,7 +34,9 @@ from .report import (
     write_margin_accuracy,
     write_margin_accuracy_by_model,
     write_update_precision,
+    write_update_precision_by_condition,
     write_used_target,
+    write_used_target_by_condition,
 )
 from .sources import (
     PreconditionError,
@@ -110,6 +120,38 @@ def main() -> None:
     ]
     write_used_target(used_target_rows, os.path.join(args.output_dir, "used_target_by_model.csv"))
     write_update_precision(update_precision_rows, os.path.join(args.output_dir, "update_precision_comparison.csv"))
+
+    # ---- 3b. target-sentence delta, split by condition (both-answered pairs only, per cell) ----
+    missing_confirmatory_by_condition = count_missing_ablation_answer_by_condition(main_rows, ablation_rows, "confirmatory")
+    missing_exploratory_by_condition = count_missing_ablation_answer_by_condition(main_rows, ablation_rows, "exploratory")
+
+    used_target_confirmatory_by_condition = used_target_summary_by_condition(delta_confirmatory, missing_confirmatory_by_condition)
+    used_target_exploratory_by_condition = used_target_summary_by_condition(delta_exploratory, missing_exploratory_by_condition)
+
+    def _raw_accuracy_by_condition(accuracy_table: list[dict]) -> dict[tuple[str, str], tuple[int, float | None]]:
+        lookup = {}
+        for row in accuracy_table:
+            for condition in ("bare", "ba", "ma"):
+                lookup[(row["model"], condition)] = (row[f"n_valid_{condition}"], row[f"accuracy_{condition}"])
+        return lookup
+
+    raw_confirmatory_by_model_condition = _raw_accuracy_by_condition(confirmatory_accuracy)
+    raw_exploratory_by_model_condition = _raw_accuracy_by_condition(exploratory_accuracy)
+
+    update_precision_confirmatory_by_condition = update_precision_by_condition(delta_confirmatory, raw_confirmatory_by_model_condition)
+    update_precision_exploratory_by_condition = update_precision_by_condition(delta_exploratory, raw_exploratory_by_model_condition)
+
+    used_target_by_condition_rows = [{"set": "confirmatory", **r} for r in used_target_confirmatory_by_condition] + [
+        {"set": "exploratory", **r} for r in used_target_exploratory_by_condition
+    ]
+    update_precision_by_condition_rows = [
+        {"set": "confirmatory", **r} for r in update_precision_confirmatory_by_condition
+    ] + [{"set": "exploratory", **r} for r in update_precision_exploratory_by_condition]
+
+    write_used_target_by_condition(used_target_by_condition_rows, os.path.join(args.output_dir, "used_target_by_model_condition.csv"))
+    write_update_precision_by_condition(
+        update_precision_by_condition_rows, os.path.join(args.output_dir, "update_precision_by_model_condition.csv")
+    )
 
     # ---- 4. confusion matrices (confirmatory only) ----
     matrices = confusion_matrices_by_model(confirmatory_rows)
