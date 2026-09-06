@@ -90,6 +90,8 @@ Per-model breakdown in margin_stratified_accuracy_by_model.csv. Note there are t
 
 used_target_rate and update_precision broken out by condition (bare/ba/ma), one row per (model, condition), both-answered-pairs denominator per cell: see `used_target_by_model_condition.csv` and `update_precision_by_model_condition.csv`.
 
+**Raw condition accuracy conflates two different things.** Splitting each (model, condition)'s both-answered items by whether the *ablation* answer already equaled gold (prior_correct) or not (prior_incorrect), and reporting each group's own main-experiment accuracy separately, is what actually measures "used the target sentence to fix a wrong judgment" -- only the prior_incorrect group's accuracy answers that question. See `prior_correction_by_model_condition.csv`.
+
 ## 4. Confusion matrices -- confirmatory, per model
 
 Full 4x4 raw-count and row-normalized matrices are in confusion_matrix_confirmatory_counts.csv and confusion_matrix_confirmatory_rownorm.csv (rows=gold_semantic, cols=model choice). n_scored (parse_failed=False) per model:

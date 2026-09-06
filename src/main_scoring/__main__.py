@@ -20,6 +20,7 @@ from .delta import (
     build_delta_rows,
     count_missing_ablation_answer,
     count_missing_ablation_answer_by_condition,
+    prior_correction_table,
     update_precision_by_condition,
     update_precision_comparison,
     used_target_summary,
@@ -33,6 +34,7 @@ from .report import (
     write_design_gold_following,
     write_margin_accuracy,
     write_margin_accuracy_by_model,
+    write_prior_correction,
     write_update_precision,
     write_update_precision_by_condition,
     write_used_target,
@@ -152,6 +154,14 @@ def main() -> None:
     write_update_precision_by_condition(
         update_precision_by_condition_rows, os.path.join(args.output_dir, "update_precision_by_model_condition.csv")
     )
+
+    # ---- 3c. prior-correction: split each (model, condition) by whether the ablation answer already equaled gold ----
+    prior_correction_confirmatory = prior_correction_table(delta_confirmatory)
+    prior_correction_exploratory = prior_correction_table(delta_exploratory)
+    prior_correction_rows = [{"set": "confirmatory", **r} for r in prior_correction_confirmatory] + [
+        {"set": "exploratory", **r} for r in prior_correction_exploratory
+    ]
+    write_prior_correction(prior_correction_rows, os.path.join(args.output_dir, "prior_correction_by_model_condition.csv"))
 
     # ---- 4. confusion matrices (confirmatory only) ----
     matrices = confusion_matrices_by_model(confirmatory_rows)

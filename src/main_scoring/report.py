@@ -61,6 +61,8 @@ UPDATE_PRECISION_BY_CONDITION_FIELDS = [
     "update_precision",
 ]
 
+PRIOR_CORRECTION_FIELDS = ["set", "model", "condition", "group", "n_items", "accuracy"]
+
 
 def _write_rows(path: str, fields: list[str], rows: list[dict]) -> None:
     with open(path, "w", newline="", encoding="utf-8") as f:
@@ -99,6 +101,10 @@ def write_used_target_by_condition(rows: list[dict], path: str) -> None:
 
 def write_update_precision_by_condition(rows: list[dict], path: str) -> None:
     _write_rows(path, UPDATE_PRECISION_BY_CONDITION_FIELDS, rows)
+
+
+def write_prior_correction(rows: list[dict], path: str) -> None:
+    _write_rows(path, PRIOR_CORRECTION_FIELDS, rows)
 
 
 def write_confusion_variant(matrices_by_model: dict, variant: str, path: str) -> None:
@@ -250,6 +256,14 @@ def render_summary(
         "used_target_rate and update_precision broken out by condition (bare/ba/ma), one row per "
         "(model, condition), both-answered-pairs denominator per cell: see "
         "`used_target_by_model_condition.csv` and `update_precision_by_model_condition.csv`."
+    )
+    lines.append("")
+    lines.append(
+        "**Raw condition accuracy conflates two different things.** Splitting each (model, condition)'s "
+        "both-answered items by whether the *ablation* answer already equaled gold (prior_correct) or not "
+        "(prior_incorrect), and reporting each group's own main-experiment accuracy separately, is what "
+        "actually measures \"used the target sentence to fix a wrong judgment\" -- only the prior_incorrect "
+        "group's accuracy answers that question. See `prior_correction_by_model_condition.csv`."
     )
     lines.append("")
 
