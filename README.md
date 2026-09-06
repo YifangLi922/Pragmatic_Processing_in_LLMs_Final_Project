@@ -1,209 +1,773 @@
-# SFP-吧：普通话语气词对比敏感度评测
+# SFP-ba: Sentence-Final Particle Sensitivity in Large Language Models
 
-项目背景、实验设计、数据格式规格、代码模块规格详见 [`SFP_coding plan.md`](./SFP_coding%20plan.md)。本 README 说明目前已实现部分（模块2/3/4）的安装和运行方式。
+This project tests whether large language models can read the pragmatic
+meaning that Mandarin sentence-final particles add to an utterance, the
+same way native speakers do. The two particles under study are **吧 (ba)**
+and **吗 (ma)**. Both attach to the end of a sentence and, without changing
+its literal content, change the speaker's stance toward it:
 
-## 目录结构
+| Form | Literal gloss | Pragmatic effect |
+|---|---|---|
+| `P` (no particle, "bare") | plain statement | read as a confident **assertion** |
+| `P` + **吧 (ba)** | "P, right?" / "P, I take it" | read as a **tentative, confirmation-seeking** statement — the speaker leans toward believing P but wants it confirmed |
+| `P` + **吗 (ma)** | "Is it the case that P?" | read as a **neutral yes/no question** — the speaker has no stated leaning |
+
+A model that has genuinely learned this should give a different answer to
+"what is the speaker doing here?" depending on which of the three forms it
+sees, even though the surrounding context and the propositional content
+`P` are identical. A model that has only memorized the dictionary
+definitions of 吧/吗 without being sensitive to how they interact with
+context might not.
+
+This repository contains the full pipeline: the hand-built + LLM-assisted
+item set, the native-speaker annotation and quality-control process used to
+establish ground truth, the code that queries six LLMs, and the analysis
+that scores them against that ground truth and against a human baseline.
+
+**This is the authoritative, up-to-date documentation of the finished
+project**, written for readers who do not read Mandarin. The repository
+also contains `README_zh.md`, which is an earlier-stage Chinese-language
+development log (covering roughly the first third of the project, before
+the dataset was frozen); it is kept for historical continuity but is no
+longer current. `SFP_分析总结.md` (Chinese) is the original analysis
+narrative this README's "Key Findings" section is adapted from, without
+its final "remaining tasks" and appendix sections (both about paper/poster
+writing, not the results themselves).
+
+---
+
+## TL;DR — the main finding
+
+> **Models track the "textbook" function of a particle; native speakers
+> track the specific context. When the two agree, models look excellent.
+> When they disagree, models fall back to the textbook.**
+
+Four independent pieces of evidence support this (see [Key Findings](#8-key-findings)
+below), and the result runs opposite to the project's original hypothesis
+(see [§1](#1-research-question-and-design)).
+
+---
+
+## Table of contents
+
+1. [Research question and design](#1-research-question-and-design)
+2. [Repository structure](#2-repository-structure)
+3. [Setup](#3-setup)
+4. [Item construction](#4-item-construction-how-the-stimuli-were-built)
+5. [The data pipeline, step by step](#5-the-data-pipeline-step-by-step)
+6. [Running the tests](#6-running-the-tests)
+7. [How to interpret the output](#7-how-to-interpret-the-output)
+8. [Key findings](#8-key-findings)
+9. [Limitations and future work](#9-limitations-and-future-work)
+10. [Evidence summary](#10-evidence-summary)
+11. [Models, cost, and reproducibility notes](#11-models-cost-and-reproducibility-notes)
+
+---
+
+## 1. Research question and design
+
+**Core question:** can an LLM infer, from context, the stance a Mandarin
+speaker takes toward a proposition when it is marked with 吧 or 吗 — the
+same way a native speaker does — or does it only recognize the particles'
+dictionary meaning?
+
+**Design — the minimal triplet.** Every test item belongs to a *family*: one
+shared context, one shared target proposition `P`, and one shared
+four-option question, realized in three conditions that differ **only** in
+how the target sentence ends (bare / +ba / +ma). Because everything else is
+held fixed within a family, any difference in a model's answer across the
+three conditions can only be attributed to the particle itself.
+
+**Example family** (F01, one of the 20 families used in the main
+analysis; English glosses added):
+
+> **Context:** Zhou and Lin are attending a training session organized by
+> their workplace. A staff member just came by to remind everyone to sign
+> in. After that person leaves, Zhou says to Lin:
+>
+> - **bare:** 刚才那位是这里的负责人 — *"That person just now is the one in
+>   charge here."*
+> - **+ba:** 刚才那位是这里的负责人**吧** — *"That person just now is the one
+>   in charge here, right?"*
+> - **+ma:** 刚才那位是这里的负责人**吗** — *"Is that person the one in
+>   charge here?"*
+>
+> **Question:** which attitude is Zhou most likely expressing?
+>
+> A. Zhou is asking Lin to go find that person *(distractor — off-topic)*
+> B. Zhou is just asking whether that person is in charge, with no clear
+>    leaning either way *(neutral)*
+> C. Zhou is fairly confident that person is in charge, and is telling Lin
+>    *(assert / statement)*
+> D. Zhou leans toward thinking that person is in charge, but isn't fully
+>    sure, and wants Lin to confirm *(tentative / confirmation-seeking)*
+
+By design, bare items are expected to select C, +ba items D, and +ma items
+B. Throughout the code and the output tables these four semantic roles are
+labelled **ASSERT** (statement), **TENTATIVE** (confirmation-seeking),
+**NEUTRAL**, and **DISTRACTOR** — this is the fixed vocabulary used
+everywhere (confusion matrices, figures, CSV columns).
+
+**Original hypothesis (H4):** of the three conditions, +ba would be
+hardest for models, and models would tend to collapse +ba into +ma (i.e.
+misread a confirmation-seeking statement as a neutral question). **The
+result came out the other way around** — see [Finding 2](#8-key-findings).
+
+---
+
+## 2. Repository structure
 
 ```
-config/models.yaml         # 模型清单（provider/model_id/分组/价格），改模型不用改代码
-data/fake_items.json       # 5 道手写假题，用于模块4冒烟测试，不是正式数据
-data/fake_annotations.json # 5 个假 family（15题）× 4 假标注员，用于模块2/3测试，不是正式数据
-                            # 已经是"母题对照表还原后"的形状（模块1的输出形状），只含
-                            # item_id/family_id/particle_condition + 语义层面的标注，
-                            # 刻意覆盖了 4:0/3:1/2:1:1/2:2 四种共识、以及 gold 撞车/
-                            # 无多数/自然度不达标三种剔除触发场景，方便测试
-data/reconstructed.json    # 模块1对真实标注数据的还原结果（108题，4标注员），非最终数据集
-data/quality_report.json   # 模块1的质量报告（按标注员：划水/漏答/自然度方差/与设计gold过度一致等）
-raw_xlsx_data/original_data_with_answers/SFP标注完整版.xlsx   # 母题对照表（答案键），模块1的 --master 输入
-raw_xlsx_data/native_speaker_annotations/SFP母语者标注N ....xlsx  # 标注员原始答题表，模块1的 --annotator 输入
+item_design/                    # How the test items were designed (see §4)
+  SFP_ba_item_design_framework_v0.3.md   # The construction framework/heuristics
+  SFP pilot families.docx                # First-draft write-up: the 10 pilot families
+  SFP expanded families.docx             # Draft after expanding to all 36 families
+  pilot/
+    SFP pilot标注表格.xlsx                 # Annotation form given to the 1 pilot annotator
+    SFP pilot母语者标注结果.xlsx            # That pilot annotator's completed responses
 
-src/reconstruct/            # 模块1：数据读取与还原
-  semantics.py               # 从选项文本模式匹配出 statement/confirmation/neutral/distractor
-  master_table.py             # 读母题对照表（答案键），家族/条件/设计gold/选项语义
-  annotator_table.py           # 读单个标注员的原始答题表
-  build.py                      # 按shuffled_index join，字母→语义翻译，产出4.3节的结构
-  quality.py                     # 质量报告：划水/漏答/自然度方差/与设计gold过度一致
-  __main__.py                     # 命令行入口
+raw_xlsx_data/                  # Raw spreadsheets, as collected
+  original_data_with_answers/
+    SFP标注完整版.xlsx            # Master item bank + intended ("design") answer key
+  native_speaker_annotations/
+    SFP母语者标注1 经济学.xlsx     # Annotator "Econ" (economics background)
+    SFP母语者标注2 媒体信息.xlsx    # Annotator "Media" (media studies)
+    SFP母语者标注3 材料科学.xlsx    # Annotator "Materials" (materials science)
+    SFP母语者标注4 BWL.xlsx        # Annotator "BWL" (business administration)
+    SFP母语者标注5 英语文学.xlsx    # Annotator "EngLit" (English literature)
 
-src/gold/                  # 模块2：gold 定义 + family 剔除
-  config.py                 # 可配置阈值（自然度下限、是否要求强共识）
-  majority_vote.py           # 语义层面多数票 + 共识强度分级
-  exclusion.py                # family 级剔除规则 + 剔除原因统计
+data/                           # Derived data (JSON), used as input further down the pipeline
+  reconstructed_5ann.json        # Final reconstruction: 108 items x 5 annotators -- everything
+                                  # downstream (diagnostic, pool sensitivity, freeze, human
+                                  # baseline) reads this file
+  reconstructed.json             # Earlier 4-annotator reconstruction, used only to validate
+                                  # the reconstruction code before the 5th annotator's data
+                                  # arrived; not used by any of the reported results
+  quality_report_5ann.json / quality_report.json   # Per-annotator QC reports for the two files above
+  ablation_raw.jsonl              # Raw LLM responses from the context-only ablation query
+  fake_items.json / fake_annotations.json           # Synthetic fixtures used only by unit tests
 
-src/agreement/              # 模块3：一致度 + LOO human baseline
-  kappa.py                    # Fleiss' kappa（支持每题有效评分数不等）
-  rates.py                     # hesitation/no_valid_option 比率、自然度分布，按condition分
-  loo_baseline.py               # leave-one-annotator-out human baseline，按condition分
+intermediate_outputs/           # Process artifacts -- each stage's own output, consumed by
+                                 # a later stage, not itself a headline result
+  diagnostic/                    # Per-annotator, per-condition QC (used to decide the
+                                  # Econ/BWL exclusions, see §4 and Finding-adjacent §1 of
+                                  # Key Findings)
+  pool_sensitivity/               # Family classification (KEEP / COLLAPSE / NO_CONSENSUS /
+                                  #  EXCLUDE_BROKEN) under 4 candidate annotator pools
+  frozen_dataset/                  # The final, frozen item set (see §5.4) -- frozen_dataset.csv
+                                  # (60 confirmatory items) + frozen_exploratory.csv (18
+                                  # exploratory items) + freeze_report.md
+  ablation/                         # Context-only ablation: what each model answers when the
+                                  # target sentence is removed
+  main_experiment/                  # Raw main-experiment query results (6 models x 78 items,
+                                  # target sentence included)
 
-src/llm_query/              # 模块4：prompt构造 → 调用 → 解析 → 落盘
-  prompt.py                  # build_prompt(item) -> str
-  parser.py                   # parse_answer(raw_text) -> "A"/"B"/"C"/"D"/None
-  providers/
-    base.py                    # Provider 接口 + LLMResponse 数据结构
-    mock.py                     # 不联网的假 provider，用哈希生成确定性答案
-    openrouter.py                # 真实 OpenRouter 客户端（重试/退避、可选 logprobs）
-  cost_guard.py                 # 付费模型（目前只有 gemini-3-flash-preview）的花费护栏
-  runner.py                      # 主循环：item × model，断点续跑
-  __main__.py                    # 命令行入口
+results/                        # Final tables and figures -- the headline output
+  main_scoring/
+    main_scoring_summary.md         # Start here -- narrated summary of every table below
+    condition_accuracy/              # Accuracy by model x condition (confirmatory + exploratory)
+    margin_stratified_accuracy/       # Accuracy broken down by how unanimous the human gold was
+    target_sentence_delta/             # Did the model change its answer once shown the target
+                                      # sentence, and was the change correct? (used_target,
+                                      # update_precision, prior_correction)
+    confusion_matrices/                 # Model choice vs. gold, per model
+    design_gold_following/               # On exploratory items where the empirical gold shifted
+                                      # away from the design intent, which one did the model follow?
+  human_baseline_core3/             # Native-speaker baseline (LOO + concordance), for
+                                  # comparison against model accuracy
+  figures/                          # The 5 poster figures, PNG (300dpi) + PDF, one subfolder each
+    fig1_condition_accuracy/
+    fig2_confusion_grid/
+    fig3_ba_vs_ma_scatter/
+    fig4_used_target_by_condition/
+    fig5_design_gold_following/
 
-src/scoring/                 # 模块5：模型答案 vs gold 打分
-  join.py                     # 把模块4结果和模块2的gold/保留family连接成打分表
-  accuracy.py                  # condition accuracy + Wilson 95% CI
-  pair_family_success.py        # pair success、family success
-  confusion.py                   # 每condition下模型答案的语义分布
-  logprob_shift.py                 # 有logprob时的语义概率轮廓（best-effort）
-  report.py                         # 组装每个模型的成绩单
-  __main__.py                        # 命令行入口
+config/models.yaml               # The 6-model roster (provider/model id/price/notes) -- change
+                                  # models here, not in code
+.env.example                     # Copy to .env and fill in OPENROUTER_API_KEY
 
-src/stats/                   # 模块6：McNemar + 描述性图表（mixed-effects部分见下方"现状"）
-  mcnemar.py                  # McNemar精确检验（配对二元准确率比较）
-  plot_data.py                 # 出图前的纯数据整形（不含matplotlib，可单测）
-  plots.py                      # 四张图：confusion热图、condition accuracy、family success、model vs human baseline
-  __main__.py                    # 命令行入口
+src/                              # All pipeline code (one subpackage per stage, see §5)
+tests/                            # Unit tests, one subfolder per src/ subpackage
 
-tests/reconstruct/test_module1.py  # 单元测试，纯 Python fixture，不需要真实 .xlsx 文件
-tests/gold/test_module2.py         # 单元测试，用 data/fake_annotations.json
-tests/agreement/test_module3.py    # 单元测试，用 data/fake_annotations.json（含手算校验的小样例）
-tests/llm_query/test_module4.py    # 单元测试，全部用 MockProvider，不需要网络/key
-tests/scoring/test_module5.py      # 单元测试，手造已知期望结果的小样例
-tests/stats/test_module6.py        # 单元测试，McNemar/出图数据整形单测 + 出图函数冒烟测试
-output/                     # 运行结果落盘目录（.jsonl，每行一条记录）
+Econ_diagnostic_spec_for_claude_code.md    # Design spec for the annotator diagnostic (src/diagnostic)
+pool_sensitivity_spec_for_claude_code.md   # Design spec for the pool-sensitivity classification
+SFP_coding plan.md                          # Original project/data-format/module plan (Chinese)
+SFP_分析总结.md                              # Full analysis narrative this README's §8-10 are based on (Chinese)
+README_zh.md                                # Earlier-stage Chinese development log (see note above)
 ```
 
-## 安装
+---
+
+## 3. Setup
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env   # 之后把 OPENROUTER_API_KEY 填进 .env
+cp .env.example .env   # then fill in OPENROUTER_API_KEY
 ```
 
-## 跑单元测试
+Everything below is pure Python (stdlib + `PyYAML`, `python-dotenv`,
+`requests`, `openpyxl`, `matplotlib`, `numpy`, `pytest`); no GPU or external
+service is required except for the two steps that call LLMs
+(`src.ablation.query` and `src.main_experiment.query`), and those are
+resumable and budget-capped (see [§11](#11-models-cost-and-reproducibility-notes)).
+
+---
+
+## 4. Item construction: how the stimuli were built
+
+Full detail is in [`item_design/SFP_ba_item_design_framework_v0.3.md`](item_design/SFP_ba_item_design_framework_v0.3.md)
+(Chinese); this section gives the short version.
+
+Every family's target proposition `P` had to support a clean three-way
+contrast (bare reads as assertion, +ba as confirmation-seeking, +ma as a
+neutral question), so items were not sampled from a fixed experimental
+design in the usual factorial sense. Instead, the framework document lays
+out a **construction scaffold**, not a set of experimental factors:
+
+- A **2x2 "interaction setting" grid** (channel: offline / online, x
+  relation: personal-peer / role-based-institutional) used to keep the
+  *sampling* of contexts varied, so that all 20+ families didn't end up
+  reading like the same conversation.
+- **4 researcher-defined "proposition classes"** (identity/classification;
+  external state or result; person-related state/experience;
+  future/expected event) used as a *writing heuristic* to keep the content
+  of `P` varied, again not as an experimental factor to be analyzed.
+
+Crossing these gives a 4x4 space of 16 candidate cells, used only as
+coverage guidance ("try to touch most of these cells, don't obsess over
+filling every one") — the framework is explicit that **contrast quality
+comes before naturalness, which comes before coverage, which comes before
+exact numerical balance.**
+
+Concretely, item authoring worked like this:
+
+1. For a candidate proposition `P`, either the author (a native Mandarin
+   speaker) wrote the context and target sentence directly, **or** asked an
+   LLM (ChatGPT 5.6, reasoning effort set to "high") for candidate sentences
+   that fit a specific cell of the framework above.
+2. LLM-generated candidates were essentially never used verbatim — they
+   tended to read as stiff or artificial. In practice, only the underlying
+   *idea* (the proposition and the intended contrast) was kept, and the
+   context and phrasing were rewritten by hand, often changing the setting
+   completely.
+3. **Pilot phase:** 10 families (30 items) were built first and given to a
+   single native speaker to annotate. This surfaced concrete problems (for
+   instance, +ba items in particular tended to read as less natural than
+   the other two conditions in a pure-text, no-intonation format — see
+   [Limitations](#9-limitations-and-future-work)). The pilot materials
+   (write-up, annotation form, and that annotator's responses) are kept in
+   [`item_design/pilot/`](item_design/pilot/).
+4. After revising based on pilot feedback, the set was expanded from 10 to
+   36 families (26 new families added). Only after the full 36-family set
+   was finalized, option order shuffled per item, and compiled into the
+   master answer-key spreadsheet
+   ([`raw_xlsx_data/original_data_with_answers/`](raw_xlsx_data/original_data_with_answers/))
+   were the 5 native-speaker annotators recruited to annotate it (§5.1).
+
+---
+
+## 5. The data pipeline, step by step
+
+Every step below is a `python -m src.<package>` command with its own
+`__main__.py`; run them in this order to reproduce every file under
+`intermediate_outputs/` and `results/` from scratch. All arguments are
+explicit paths — nothing is hardcoded to a particular machine.
+
+### 5.1 Reconstruction (`src.reconstruct`)
+
+Joins the master answer-key spreadsheet with each native speaker's raw
+answer sheet into one machine-readable record per item, with each
+annotator's answer translated from a letter (A/B/C/D, which was shuffled
+per item) into its semantic role (statement / confirmation / neutral /
+distractor).
+
+```bash
+python -m src.reconstruct \
+    --master "raw_xlsx_data/original_data_with_answers/SFP标注完整版.xlsx" \
+    --annotator Econ="raw_xlsx_data/native_speaker_annotations/SFP母语者标注1 经济学.xlsx" \
+    --annotator Media="raw_xlsx_data/native_speaker_annotations/SFP母语者标注2 媒体信息.xlsx" \
+    --annotator Materials="raw_xlsx_data/native_speaker_annotations/SFP母语者标注3 材料科学.xlsx" \
+    --annotator BWL="raw_xlsx_data/native_speaker_annotations/SFP母语者标注4 BWL.xlsx" \
+    --annotator EngLit="raw_xlsx_data/native_speaker_annotations/SFP母语者标注5 英语文学.xlsx" \
+    --output data/reconstructed_5ann.json \
+    --quality-output data/quality_report_5ann.json
+```
+
+The quality report automatically flags: straight-lining (>70% of answers on
+one letter), unanswered items, zero variance in naturalness ratings, "flat
+responding" (zero hesitation + zero "no valid option" + zero naturalness
+variance at once), and an annotator whose agreement with the *design*
+answer key is a statistical outlier relative to the rest of the batch
+(z > 2). These checks fed directly into the annotator-exclusion decision
+below.
+
+### 5.2 Annotator diagnostic (`src.diagnostic`)
+
+Descriptive, condition-wise QC per annotator (bare/ba/ma agreement and
+coverage against a leave-one-out reference pool of the others). This is
+what identified the two annotators later excluded from the "core3" pool:
+
+```bash
+python -m src.diagnostic \
+    --reconstructed data/reconstructed_5ann.json \
+    --output-dir intermediate_outputs/diagnostic
+```
+
+See [`intermediate_outputs/diagnostic/Diagnostic_Output_README.md`](intermediate_outputs/diagnostic/Diagnostic_Output_README.md)
+for the full output layout, and [Key Findings §0](#8-key-findings) below for
+what it found.
+
+### 5.3 Pool sensitivity (`src.pool_sensitivity`)
+
+For each of the 36 item families, computes the empirical (annotator-vote)
+gold answer for each condition and classifies the family as KEEP /
+COLLAPSE_structural / NO_CONSENSUS / EXCLUDE_BROKEN, under 4 different
+candidate annotator pools (core3, core3+Econ, core3+BWL, all 5) — this is
+what makes the final family selection auditable rather than a one-off
+manual call.
+
+```bash
+python -m src.pool_sensitivity \
+    --reconstructed data/reconstructed_5ann.json \
+    --output-dir intermediate_outputs/pool_sensitivity
+```
+
+### 5.4 Freeze (`src.freeze`)
+
+Joins the pool-sensitivity classification (under the core3 pool
+specifically) with the item text into the two CSVs that every later step
+treats as read-only ground truth, and writes a full provenance report.
+
+```bash
+python -m src.freeze \
+    --reconstructed data/reconstructed_5ann.json \
+    --pool-sensitivity-dir intermediate_outputs/pool_sensitivity \
+    --output-dir intermediate_outputs/frozen_dataset
+```
+
+This produced `frozen_dataset.csv` (20 KEEP families x 3 conditions = 60
+"confirmatory" items — the primary analysis set) and
+`frozen_exploratory.csv` (6 COLLAPSE_structural families x 3 = 18
+"exploratory" items — reported separately, not comparable to confirmatory
+accuracy, see [§7](#7-how-to-interpret-the-output)). The commit that
+produced these two files is tagged `dataset-frozen-v1`; see
+[`intermediate_outputs/frozen_dataset/freeze_report.md`](intermediate_outputs/frozen_dataset/freeze_report.md)
+for the complete provenance record, including the pool-sensitivity grid
+and the exact list of gold-shifted items.
+
+### 5.5 Context-only ablation (`src.ablation`)
+
+Queries all 6 models on the frozen items with the **target sentence
+removed** (context + question + options only, everything else identical).
+This measures each model's default guess when it cannot yet have seen the
+particle at all — used both as a leakage check (does context alone give
+away the answer?) and, more importantly, as the "prior" that
+`target_sentence_delta` compares the real run against.
+
+```bash
+# Step 1: query (resumable; only missing (item, model) pairs are re-queried)
+python -m src.ablation.query \
+    --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \
+    --frozen-exploratory intermediate_outputs/frozen_dataset/frozen_exploratory.csv \
+    --reconstructed data/reconstructed_5ann.json \
+    --output data/ablation_raw.jsonl
+
+# Step 2: turn the checkpoint into analysis tables (cheap, safe to re-run any time)
+python -m src.ablation.analyze \
+    --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \
+    --frozen-exploratory intermediate_outputs/frozen_dataset/frozen_exploratory.csv \
+    --reconstructed data/reconstructed_5ann.json \
+    --raw data/ablation_raw.jsonl \
+    --output-dir intermediate_outputs/ablation
+```
+
+**Result: 0% shortcut rate on bare items** — context alone never leaks the
+answer. A shortcut signal did appear on some +ba/+ma items, but traced back
+to a model-level default preference for the "confirmation" label when
+information is missing (see [Finding 3](#8-key-findings)), not to a leak in
+the stimulus — so no families were dropped for this reason.
+
+### 5.6 Main experiment (`src.main_experiment`)
+
+The real trial: queries all 6 models on the same 78 frozen items **with**
+the target sentence included.
+
+```bash
+python -m src.main_experiment.query \
+    --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \
+    --frozen-exploratory intermediate_outputs/frozen_dataset/frozen_exploratory.csv \
+    --reconstructed data/reconstructed_5ann.json \
+    --output-dir intermediate_outputs/main_experiment
+```
+
+### 5.7 Main scoring (`src.main_scoring`)
+
+Combines the main-experiment results, the ablation results, and the frozen
+gold to produce every table under `results/main_scoring/`: condition
+accuracy, margin-stratified accuracy, the target-sentence delta analysis,
+confusion matrices, and design-gold following.
+
+```bash
+python -m src.main_scoring \
+    --main-results intermediate_outputs/main_experiment/main_results.csv \
+    --ablation-results intermediate_outputs/ablation/ablation_results.csv \
+    --ablation-item-summary intermediate_outputs/ablation/ablation_item_summary.csv \
+    --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \
+    --frozen-exploratory intermediate_outputs/frozen_dataset/frozen_exploratory.csv \
+    --output-dir results/main_scoring
+```
+
+### 5.8 Human baseline (`src.human_baseline_core3`)
+
+Computes what native speakers themselves achieve on the same 60
+confirmatory items, restricted to the three core3 annotators, under two
+different metrics (explained in [§7](#7-how-to-interpret-the-output)).
+
+```bash
+python -m src.human_baseline_core3 \
+    --reconstructed data/reconstructed_5ann.json \
+    --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \
+    --output-dir results/human_baseline_core3
+```
+
+### 5.9 Figures (`src.results_viz`)
+
+Renders the 5 poster figures from the two results folders above.
+
+```bash
+python -m src.results_viz \
+    --main-scoring-dir results/main_scoring \
+    --human-baseline-dir results/human_baseline_core3 \
+    --output-dir results/figures
+```
+
+### A note on `src/gold`, `src/scoring`, and `src/stats`
+
+These three packages are an **earlier prototype** of the scoring pipeline,
+written before the dataset was frozen at 36 families (back when the plan
+was still a single fixed annotator pool with no pool-sensitivity check).
+They are not part of the pipeline that produced any table or figure under
+`results/` — `src.main_scoring` and `src.results_viz` are the modules that
+actually generated the reported results, and they do not import from
+`src.gold` or `src.scoring`. `src/gold`, `src/scoring`, and `src/stats` (and
+the `kappa`/`rates` helpers in `src/agreement`, as opposed to
+`loo_baseline`, which *is* still used by `src.human_baseline_core3`) are
+kept only because their unit tests still document the logic they contain;
+they are not required to reproduce anything under `results/`.
+
+### The generic LLM-querying engine (`src.llm_query`)
+
+Both `src.ablation.query` and `src.main_experiment.query` are built on top
+of a shared, provider-agnostic engine in `src/llm_query/`: prompt
+construction, response parsing, a mock provider for offline testing, a real
+OpenRouter client with retry/backoff, and a resumable runner (a rerun skips
+any (item, model) pair that already has a result on disk). It can also be
+run directly, which is useful as a no-API-key smoke test:
+
+```bash
+# smoke test: 5 synthetic items, deterministic mock answers, no network/API key
+python -m src.llm_query --items data/fake_items.json \
+    --output /tmp/fake_mock_results.jsonl --mock
+```
+
+---
+
+## 6. Running the tests
 
 ```bash
 python -m pytest tests/ -v
 ```
 
-## 冒烟测试（不需要 API key）
+All 183 tests use synthetic fixtures only — no real `.xlsx` files, no
+network access, and no API key are needed to run them. `tests/`
+mirrors `src/` one subpackage at a time (e.g. `tests/main_scoring/` tests
+`src/main_scoring/`). `tests/reconstruct/` does import `openpyxl`
+transitively (through the module it tests), so make sure
+`pip install -r requirements.txt` has been run first.
 
-用 mock provider 在 5 道假题上跑一遍，验证 prompt 构造、解析、落盘、断点续跑整条链路：
+---
 
-```bash
-python -m src.llm_query --items data/fake_items.json \
-    --output output/fake_mock_results.jsonl --mock
-```
+## 7. How to interpret the output
 
-再跑一次同样的命令，输出行数不会增加——已成功的 (item, model) 组合会被跳过，这就是断点续跑机制。想重新跑就删掉 `output/fake_mock_results.jsonl`。
+Start with **[`results/main_scoring/main_scoring_summary.md`](results/main_scoring/main_scoring_summary.md)** —
+it narrates every table below in one place, including several
+clarifications about denominators and edge cases that matter for reading
+the numbers correctly. The subfolders it links to:
 
-## 真实调用 OpenRouter
+- **`condition_accuracy/`** — accuracy per model, per condition (bare/ba/ma),
+  for the confirmatory (60-item) and exploratory (18-item) sets
+  *separately*. **These two sets are never comparable to each other**: every
+  exploratory family was, by construction, one where two of its three
+  conditions' empirical gold collapsed onto the same label, which
+  structurally inflates its accuracy relative to confirmatory. Treat
+  exploratory as a secondary, qualitative set only.
+- **`margin_stratified_accuracy/`** — confirmatory accuracy broken down by
+  how unanimous the 3 core3 annotators were on an item's gold label (3:0
+  unanimous, 2:0 unanimous-with-one-abstention, 2:1 majority). In this
+  dataset, accuracy is essentially flat across all three margins (~80–82%),
+  so this is not a major axis of the story — it's reported for completeness.
+- **`target_sentence_delta/`** — the "did the model actually use the
+  particle, or already know the answer?" family of tables:
+  - `used_target_by_model[_condition].csv`: how often a model changed its
+    answer once the target sentence (with the particle) was shown, versus
+    the context-only ablation answer. The denominator is *both-answered
+    pairs only* — a model that refused to guess in the ablation contributes
+    no comparison and is excluded, not counted as "used the target".
+  - `update_precision_comparison.csv` / `update_precision_by_model_condition.csv`:
+    among the times a model *did* change its answer, how often was the new
+    answer correct? This is a different question from raw accuracy and
+    should be read alongside it, not as a replacement.
+  - `prior_correction_by_model_condition.csv`: the most important table for
+    interpreting any accuracy figure that looks unexpectedly high. It
+    splits every (model, condition) cell into items where the ablation
+    answer (no particle seen) already happened to equal gold
+    ("`prior_correct`") versus items where it didn't ("`prior_incorrect`"),
+    and reports each group's own main-experiment accuracy. Only the
+    `prior_incorrect` group's accuracy actually measures "the model used
+    the sentence to correct a wrong guess" — see
+    [Finding 4](#8-key-findings) for why this matters.
+- **`confusion_matrices/`** — row-normalized (`_rownorm.csv`) and raw-count
+  (`_counts.csv`) confusion between gold and each model's answer, rows and
+  columns fixed in ASSERT / TENTATIVE / NEUTRAL / DISTRACTOR order.
+- **`design_gold_following/`** — on the 4 exploratory items where the
+  empirical (annotator-majority) gold shifted away from the item's original
+  design intent, how often did the model's answer match the *original
+  design* label instead of the (correct, but shifted) empirical one? n=4,
+  reported as a qualitative pattern only.
 
-`.env` 填好 key 后：
+**`results/human_baseline_core3/`** reports two different human-baseline
+metrics side by side (see `human_baseline_comparison.md` for the full
+explanation of why they differ and give different numbers):
+- **LOO** (leave-one-annotator-out): for each held-out core3 annotator, the
+  other two's majority becomes that fold's temporary gold, and the held-out
+  person is scored against it. On a 2:1 split, the minority annotator is
+  *always* scored as a miss for that fold — this makes LOO a systematic
+  **lower bound** on human performance.
+- **concordance**: for each item, the fraction of all three core3
+  annotators whose answer matches the real gold, averaged within condition.
+  This asks exactly the same question model accuracy does ("what fraction
+  of answerers picked gold?") and is the metric that should be compared
+  directly to model accuracy in the figures.
 
-```bash
-# 指定模型（逗号分隔，名字对应 config/models.yaml 的 name 字段）
-python -m src.llm_query --items data/fake_items.json \
-    --output output/fake_openrouter_results.jsonl \
-    --models deepseek-v3,gemini-3-flash-preview
+**`results/figures/`** — five figures, PNG (300dpi, for print) and PDF
+(vector) in every subfolder. No figure has an in-image title (all should
+be captioned externally); model order and bare/ba/ma color coding are
+consistent across all of them.
 
-# 不传 --models 则跑 config/models.yaml 里的全部 6 个模型
-python -m src.llm_query --items data/fake_items.json \
-    --output output/fake_openrouter_results.jsonl
-```
+| Figure | What it shows |
+|---|---|
+| `fig1_condition_accuracy` | Grouped bars: accuracy per model x condition, with a shaded human-reference band (LOO–concordance range) per condition |
+| `fig2_confusion_grid` | 2x3 grid of per-model confusion matrices, one shared colorbar |
+| `fig3_ba_vs_ma_scatter` | Each model's +ba accuracy vs. +ma accuracy, with a y=x reference line and dashed lines marking human concordance on each axis |
+| `fig4_used_target_by_condition` | How often each model changed its answer after seeing the target sentence, by condition, with n labeled on every bar |
+| `fig5_design_gold_following` | The n=4 design-gold-following rates from above, deliberately drawn small since the sample is qualitative |
 
-请求节奏按 `config/models.yaml` 里的 `rate_limit.requests_per_minute`（默认 20/分钟）自动控速；`gemini-3-flash-preview` 这类付费模型每次调用前会先估算花费，累计预估超过 `cost_guard.max_cost_usd`（默认 $1）就会跳过并在结果里记录 `error`，不会真的调用。
+---
 
-## 输出格式
+## 8. Key findings
 
-`output/*.jsonl` 每行一个 JSON 对象，对应 plan 里 4.4 节的模型结果表（外加 `family_id`/`particle_condition`/`prompt`/`error` 等便于调试的字段）。`error` 为 `null` 代表成功；非 `null` 代表这条记录失败（解析失败、API报错、或被 cost guard 拦下），断点续跑时会重试。
+*(Condensed from `SFP_分析总结.md`, sections 1–6; its final "remaining
+tasks" and appendix sections are about paper/poster writing and are
+omitted here as no longer relevant.)*
 
-## 模块1 怎么用
+**§0 — Why only 3 of the 5 annotators ("core3") are used as ground truth.**
+Two of the five recruited native speakers were excluded before any
+model-facing analysis:
+- **"Econ" — excluded for response style.** The diagnostic found a
+  *global* over-use of the "confirmation" label: only 66.7% self-consistency
+  on bare items (the other three annotators: 94–97%) and only 25% on +ma
+  items, while +ba looked completely normal (because +ba's gold answer is
+  usually "confirmation" anyway, so this annotator's bias happened to line
+  up with it there). One single bias explains all three conditions' numbers
+  — this is a response-style issue, not "a different but valid reading."
+- **"BWL" — excluded for suspected non-independent responding.** All 108
+  naturalness ratings were a flat 5/5, zero hesitation marks, zero
+  "no valid option" marks, and 94% agreement with the *original design*
+  answer key (far higher than any other annotator) — consistent with the
+  annotator not evaluating each item independently.
 
-真实母题对照表（答案键，"研究者答案键"工作表）+ N 份标注员原始答题表（"母语者填写"工作表）在手后：
+Importantly, dropping Econ increases the number of families with a clean
+majority — but that alone is **not** evidence the item set "got better";
+it's simply what happens when you remove one strong disagreeing vote. The
+actual justification for treating the remaining 3 annotators
+("core3": media studies, materials science, English literature
+backgrounds) as ground truth is that they were recruited independently,
+don't know each other, and still converge on ~72% pairwise agreement
+(chance level, picking among 4 options, is 25%) — a property of the
+*data*, independent of which three people they happen to be.
 
-```bash
-python -m src.reconstruct \
-    --master "raw_xlsx_data/original_data_with_answers/SFP标注完整版.xlsx" \
-    --annotator A1="raw_xlsx_data/native_speaker_annotations/SFP母语者标注1 经济学.xlsx" \
-    --annotator A2="raw_xlsx_data/native_speaker_annotations/SFP母语者标注2 媒体信息.xlsx" \
-    --annotator A3="raw_xlsx_data/native_speaker_annotations/SFP母语者标注3 材料科学.xlsx" \
-    --annotator A4="raw_xlsx_data/native_speaker_annotations/SFP母语者标注4 BWL.xlsx" \
-    --output data/reconstructed.json \
-    --quality-output data/quality_report.json
-```
+**Main result table** (6 models x 3 conditions, 60 confirmatory items):
 
-`--annotator` 可以传任意多个（不写死 4 个），加第 5 个标注员只需要多加一个 `--annotator` 参数，不用改代码。选项字母到语义骨架（statement/confirmation/neutral/distractor）的映射不依赖额外的 option_order 列，而是直接从选项原文按固定模板模式匹配得出（见 `semantics.py`），这是从真实答案键的用词规律里验证出来的，比预想的方案更省一步。
+| Model | Overall | bare | +ba | +ma |
+|---|---|---|---|---|
+| deepseek-r1-0528 | 90.0% | 95% | 100% | 75% |
+| deepseek-v3 | 80.0% | 100% | **40%** | 100% |
+| gemini-3-flash-preview | 81.7% | 90% | 100% | 55% |
+| gemma-4-31b | 78.3% | 100% | 100% | **35%** |
+| mistral-small-3-24b | 91.7% | 85% | 90% | 100% |
+| qwen3-next-80b | 70.0% | 100% | 65% | 45% |
 
-质量报告目前会自动标出：划水（单一字母占比>70%）、漏答、**自然度评分标准差为0**、**零犹豫+零"无合适答案"+零自然度方差同时出现**（"flat responding"信号）、以及**与设计者预期gold的一致率相对同批标注员是统计离群值**（z>2，需要3人以上才会算）。这几条不是随口加的——是照着一次真实的"怀疑标注员用AI代答"场景写的，现在跑在真实4人数据上就是这个结果：
+Accuracy ranges from 70–92% overall and 35–100% at the condition level —
+neither a ceiling nor a floor, meaning the item set is discriminative
+rather than trivially easy or impossibly hard.
 
-```
-[A3] 13/108 items unanswered
-[A4] naturalness rating is constant (5) across all 108 items;
-     flat responding: zero hesitation marks, zero 'no valid option' marks,
-     and zero naturalness variance -- worth a closer look
-```
+**Human baseline** (core3, frozen confirmatory set):
 
-## 模块2/3 怎么用
+| Condition | LOO (lower bound) | Concordance (primary comparison) |
+|---|---|---|
+| bare | 98.3% | 98.3% |
+| +ba | 66.6% | 78.3% |
+| +ma | 83.9% | 86.7% |
 
-真实标注数据到位、模块1把它还原成 4.3 节那种"每题一条记录 + annotations 列表"的形状之前，可以先用 `data/fake_annotations.json`（已经是还原后的形状）跑通逻辑：
+One striking mismatch: **native speakers disagree with each other most on
++ba** (lowest concordance), while **models struggle most with +ma**
+(lowest accuracy). Humans and models find different conditions hard — that
+mismatch is itself part of the story.
 
-```python
-import json
-from src.gold.exclusion import evaluate_families, exclusion_report
-from src.agreement.kappa import fleiss_kappa
-from src.agreement.rates import hesitation_rate_by_condition, naturalness_distribution_by_condition
-from src.agreement.loo_baseline import loo_human_baseline
+**Finding 1 — models track the textbook function, not the context (the
+main claim).** On the 4 exploratory items where native speakers' actual
+reading of +ma drifted from "neutral" to "confirmation-seeking" in
+context, models systematically fell back to the original *design* answer
+(neutral) instead of following the context-driven human reading:
 
-items = json.load(open("data/fake_annotations.json", encoding="utf-8"))
+| Model | % choosing the original design label (of 4 items) |
+|---|---|
+| deepseek-r1 / deepseek-v3 | 100% |
+| gemini / mistral | 75% |
+| gemma / qwen | 50% |
 
-gold_results, family_decisions = evaluate_families(items)   # 模块2
-print(exclusion_report(family_decisions))
+In other words: **when a native speaker's contextual reading diverges from
+a particle's textbook function, models follow the textbook, not the
+speaker.** (n=4 — reported as a clean qualitative pattern, not a
+statistic.)
 
-print(fleiss_kappa(items))                                   # 模块3
-print(hesitation_rate_by_condition(items))
-print(naturalness_distribution_by_condition(items))
-print(loo_human_baseline(items))
-```
+**Finding 2 — +ma gets assimilated toward +ba, reversing the original
+hypothesis (H4).** The confusion matrices show +ma errors (true label
+NEUTRAL) overwhelmingly land on TENTATIVE — the +ba reading — rather than
+anywhere else: 65% of gemma's, 55% of qwen's, 45% of gemini's, and 25% of
+deepseek-r1's +ma errors land on TENTATIVE. H4 predicted the opposite
+direction (+ba collapsing into +ma); the data show the reverse. This
+direction is **also what happens in the human data**: every one of the 6
+naturally-collapsing families and all 4 gold-shifted items drift from
+neutral toward confirmation-seeking, never the other way — a directional
+finding that holds for both humans and models.
 
-`evaluate_families` 用的阈值（自然度下限、是否要求强共识）在 `src/gold/config.py` 的 `GoldConfig` 里，真实数据到位后如果要调整阈值，改这里的默认值或者传参覆盖，不用碰逻辑代码。
+**Finding 3 — a single default-answer bias explains both a model's best
+and worst condition.** Each model appears to have one preferred "default"
+semantic label; whichever condition's gold happens to match that default,
+the model looks perfect on it, and whichever doesn't, it collapses:
+- **gemma** defaults to TENTATIVE → 100% on +ba, 35% on +ma (35% turns out
+  to be exactly chance level, see Finding 5).
+- **deepseek-v3** defaults to NEUTRAL → 100% on +ma, 40% on +ba (the mirror
+  image).
+- **mistral** shows no strong default → balanced across all three
+  conditions (85/90/100%).
 
-## 模块5 怎么用
+This is one underlying mechanism producing what look like two separate
+patterns (a model's best score and its worst score).
 
-模块1的输出 + 模块4的结果文件（可以是真实调用也可以是mock）在手后：
+**Finding 4 — most (but not all) of the perfect 100% scores are "already
+knew," not "read the sentence."** Splitting each 100%-accuracy cell by
+whether the ablation (no-sentence) answer already equalled gold reveals
+very different stories:
 
-```bash
-python -m src.scoring \
-    --items data/reconstructed.json \
-    --results output/real_openrouter_results.jsonl \
-    --output data/scorecards.json
-```
+| Cell | What's actually going on |
+|---|---|
+| gemini / +ba, 100% | 18 of 20 items were already correct without seeing the sentence; only 2 items are genuine correction cases |
+| gemma / +ba, 100% | the ablation didn't answer at all on 13/20 items (refused); of the 7 comparable items, only 2 needed correcting |
+| deepseek-v3 / +ma, 100% | 17 of 19 comparable items were already correct beforehand (the 20th had no ablation answer to compare against); 2 genuine correction cases |
+| **deepseek-r1 / +ba, 100%** | **9 genuine correction cases, and all 9 were corrected successfully** |
+| **mistral / +ma, 100%** | **10 genuine correction cases, and all 10 were corrected successfully** |
 
-`--results` 可以传多次（比如每个模型一个文件），也可以传一个合并好的文件。gold 和 family 保留名单是在这里直接调用模块2的 `evaluate_families()` 现算的（模块2自己还没有落盘 gold.csv/retained_families.csv），所以永远反映 `src/gold/config.py` 当前的阈值设置。
+To be precise: on items where the prior guess already happens to equal
+gold, this design **cannot tell** whether the model is truly reading the
+sentence or simply got lucky on its default guess — that is a limitation of
+the measurement, not evidence the model "doesn't understand" (it still
+answered correctly). But deepseek-r1 and mistral's two cells above have
+enough genuinely-uninformed items (n=9 and n=10) to say, with reasonable
+confidence, that **the ability to use the target sentence to correct a
+wrong prior does exist** — and that the task is measuring something real.
 
-打分口径（`join.py` 里也有注释）：API报错（限流、超时、被cost guard拦下）不计入打分分母，单独统计到 `n_errored`；调用成功但解析不出字母，按plan字面定义算"答错"而不是排除，单独统计到 `n_unparseable`，两个数字都留在成绩单里，方便你按需要重新核算。
+**Finding 5 — a validity check that also resets the chance baseline.** No
+model ever chose the distractor option, on any item, in the main
+experiment (the DISTRACTOR column of every confusion matrix is all zeros).
+This means (a) the four answer options are functioning as intended — the
+real competition is between the three semantic roles, not against an
+obviously-wrong option — and (b) **the effective chance baseline is 33%,
+not 25%**. That reframes gemma's 35% on +ma: it isn't "low," it is
+essentially exactly chance.
 
-## 模块6 怎么用
+---
 
-模块5的 `scorecards.json` + 模块1的还原数据在手后：
+## 9. Limitations and future work
 
-```bash
-python -m src.stats \
-    --items data/reconstructed.json \
-    --results output/real_openrouter_results.jsonl \
-    --scorecards data/scorecards.json \
-    --output-dir output/figures \
-    --mcnemar-output data/mcnemar_results.json
-```
+**The main limitation: each condition maps to a single fixed gold label.**
+By design, +ba's gold is always TENTATIVE, +ma's is always NEUTRAL, and
+bare's is always ASSERT. This means "prior correct" cases (Finding 4)
+cannot be ruled out in principle: a model with a standing preference for
+TENTATIVE would score perfectly on every +ba item without reading a single
+target sentence. The concrete, data-driven fix for a follow-up study: vary
+the gold label *within* a condition (e.g., include some +ba items whose
+correct reading is not TENTATIVE), so a default-answer strategy can no
+longer pass as competence.
 
-产出：每个模型一张混淆矩阵热图、一张跨模型 condition accuracy 对比图（Wilson CI误差棒）、一张 family success 对比图、一张 family×model 成败热图、一张模型 vs LOO human baseline 对比图；`mcnemar_results.json` 是每个模型三组条件对（bare vs +吧、+吧 vs +吗、bare vs +吗）的精确McNemar检验结果。
+**Other limitations:**
+- **Small annotator pool (n=5).** Five annotators were already enough to
+  surface one response-style outlier and one suspected-non-independent
+  respondent, which shows the QC process works — but it also means any
+  single outlier has an outsized effect on the result. A larger pool would
+  dilute this, though the underlying tension (majority-vote-based
+  exclusion is somewhat self-reinforcing) doesn't fully go away just by
+  adding more annotators.
+- **Text-only presentation is a harder format for +ba specifically.**
+  Native-speaker concordance on +ba (78.3%) is markedly lower than on bare
+  (98.3%), suggesting that without intonation or a real interactive
+  exchange, the stance +ba conveys is intrinsically harder for humans to
+  converge on in pure text. This is consistent with +ba's lower naturalness
+  ratings seen already in the pilot phase, and with a separate particle,
+  呢 (ne), being dropped from the study altogether after piloting for a
+  related reason.
+- **Free-tier API determinism.** Even at temperature 0, one item (F12) was
+  observed to receive two different answers to an identical prompt on
+  separate calls — a minor but non-zero source of noise.
 
-**mixed-effects logistic regression 还没写**：这部分该用 `statsmodels` 的 `BinomialBayesMixedGLM` 还是退一步用 GEE，等真实数据的方差结构出来后再定（细节见下面"现状"）。
+---
 
-## 现状 / 下一步
+## 10. Evidence summary
 
-- **已完成**：
-  - 模块1（数据读取与还原）：真实母题对照表 + 4 份真实标注表验证通过，108/108 题成功还原，0 条数据质量警告（修复过一次真实数据里的杂散空格问题）。质量报告成功自动检出两个真实的数据质量信号（见上面"模块1 怎么用"）。
-  - 模块2（gold定义 + family剔除）、模块3（一致度 + LOO human baseline）：先用假标注表验证了 4:0/3:1/2:1:1/2:2 四种共识、gold撞车/无多数/自然度不达标三种剔除场景；后来也在真实108题数据上跑通了全流程（仅作管线验证，不是最终结果——最终 gold/剔除/baseline 要等标注员数量和处理方式定下来、数据集冻结后才算数）。
-  - 模块4（LLM调用）：prompt构造→调用→解析→落盘→断点续跑全流程先用假题+mock provider验证，后用真实 OpenRouter key 在 6 个真模型上实测通过（5假题×6模型，0 API错误、0 解析失败，实付约 $0.01）。`config/models.yaml` 里的模型自那之后有更新：原先以为免费的 4 个模型（deepseek-v3/deepseek-r1-0528/qwen3-next-80b/mistral-small-3-24b）在 OpenRouter 上的 `:free` 版本已下架，已切换成付费版本并配了真实单价；gemma-4-31b 也主动从免费版换成付费版，让六个模型都在同一档（付费）上跑，避免"某模型表现差是因为免费限流"这种解释。
-  - 模块5（打分）：condition accuracy（Wilson 95% CI）、pair/family success、confusion matrix、best-effort logprob概率轮廓。打分口径（报错排除、解析失败算错）写清楚在代码注释里。用真实108题数据（mock provider跑一个family）做过全链路验证。
-  - 模块6（McNemar + 描述性图表）：McNemar精确检验、四张图（confusion热图/condition accuracy/family success/model vs baseline）+ 额外加了一张family×model成败热图。用真实数据全链路验证时抓到一个真bug——Wilson CI在accuracy恰好等于0.0时会有浮点误差（比如`5.5e-17`而不是精确的`0.0`），导致画图时误差棒变成负数报错，已修复并补了回归测试。mixed-effects部分留到真数据到位后再定用GEE还是`BinomialBayesMixedGLM`。
-  - 单元测试共 79 个，全过。
-- **进行中**：第 5 位标注员（英语文学硕士朋友）标注中，尚未提交。`src/gold/majority_vote.py` 的 `consensus_tier()` 目前按 4 人场景写死了"强/弱共识"的判定字符串，等 5 人数据到位、且定好 5 人场景下的共识阈值该怎么划之后再更新——这是需要人来决定的研究设计问题，不只是代码改动。
+| Conclusion | Supporting evidence |
+|---|---|
+| Models track the textbook function; native speakers track context | Finding 1 (design-gold following) + Finding 2 (the ma-to-ba assimilation direction matches humans) + near-ceiling bare accuracy everywhere (models can do the task; they specifically fail at context-driven reinterpretation) |
+| A single per-model prior explains both high and low scores | Finding 3 (mirrored confusion patterns) + Finding 4 (correction-sample sizes) |
+| The task is valid and measures a real capability | Finding 4 (deepseek-r1/mistral: n=9/10 genuine corrections, all correct) + Finding 5 (no model ever picks the distractor) + 0% shortcut rate in the bare-condition ablation |
+| The dataset construction is principled, not fitted to the conclusion | All 60 confirmatory items have empirical gold identical to design gold (every shift is confined to the excluded/exploratory families) + the 4-pool sensitivity grid + all exclusion criteria were fixed before results were inspected |
+| The annotator exclusions are justified, not arbitrary | Econ's condition-wise diagnostic + 8 of the 9 pool-unstable families are attributable to Econ specifically at the family level |
+
+---
+
+## 11. Models, cost, and reproducibility notes
+
+The 6-model roster, exact OpenRouter model IDs, and per-model notes on why
+each was chosen live in [`config/models.yaml`](config/models.yaml) — to
+add, remove, or swap a model, edit that file; no code changes are needed.
+In brief: three "Chinese-strong" models (deepseek-v3, deepseek-r1-0528,
+qwen3-next-80b) and three general-purpose models (gemma-4-31b,
+mistral-small-3-24b, gemini-3-flash-preview), all called through
+OpenRouter's OpenAI-compatible API at `temperature=0`, all on OpenRouter's
+paid tier (the free tiers for these models were retired mid-project; all
+six were deliberately kept on the same — paid — serving tier so that a
+weak result can't be explained away as "that model was rate-limited on the
+free tier").
+
+Both `src.ablation.query` and `src.main_experiment.query` are
+**resumable**: they append one line per (item, model) to a `.jsonl`
+checkpoint as soon as it succeeds, and a rerun only retries what's still
+missing. A **cost guard** (`cost_guard.max_cost_usd` in `models.yaml`,
+currently $3) estimates spend before every paid call and refuses to
+continue once the running total would exceed it, so a bug or retry loop
+cannot silently run up a large bill. A full 108-item x 6-model pass is
+estimated at well under $1.
+
+The commit that produced the two frozen CSVs is tagged `dataset-frozen-v1`;
+see [`intermediate_outputs/frozen_dataset/freeze_report.md`](intermediate_outputs/frozen_dataset/freeze_report.md)
+for the complete provenance chain from that tag forward.
