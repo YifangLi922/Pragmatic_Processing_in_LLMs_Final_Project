@@ -67,3 +67,9 @@ All 7 shifted items fall in the exploratory set; the 60 confirmatory items have 
 
 Margin distribution (7 shifted items total): margin=1: 6, margin=3: 1.
 A margin of 1 (2-1 split among 3 cast votes) is the weakest possible majority; treat those shifted golds as the ones most worth a second look, not the ones with a wider margin.
+
+## Context-only ablation validation
+
+Before freezing, a context-only ablation (target sentence removed, everything else identical) was run against all 20 confirmatory families to check whether the context alone leaks the answer. Result: **bare-condition shortcut rate is 0%** -- context alone does not leak the gold answer on any bare item. The shortcut_risk flags that did appear were concentrated on the +ba condition (8/20 families) and a few +ma items (3/20); tracing those back to individual model responses showed they stem from a model-level answer-category preference for the confirmation label when information is missing, not from a context cue specific to those items -- see ablation_output/ablation_summary_confirmatory.md. This is a model behavior artifact, not a stimulus defect, so **all 20 families were retained** rather than excising the flagged ones.
+
+Whether models actually rely on the target sentence (rather than just being capable of guessing without it) was further verified after running the main experiment, via a per-model with/without-target answer comparison (see main_scoring_output/used_target_by_model.csv): every model changed its answer on a substantial share of items once the target sentence was shown (48-67% on the confirmatory set, once ablation non-answers are correctly excluded from that denominator), confirming the sentence is doing real work rather than being redundant with context.

@@ -5,7 +5,12 @@ csv.DictReader would actually produce (booleans as "True"/"False" strings).
 
 from src.main_scoring.accuracy import condition_accuracy_table, margin_stratified_accuracy
 from src.main_scoring.confusion import confusion_matrices_by_model
-from src.main_scoring.delta import build_delta_rows, purified_accuracy_comparison, used_target_summary
+from src.main_scoring.delta import (
+    build_delta_rows,
+    count_missing_ablation_answer,
+    update_precision_comparison,
+    used_target_summary,
+)
 from src.main_scoring.sources import PreconditionError, check_preconditions
 
 
@@ -112,7 +117,6 @@ def test_build_delta_rows_used_target_true_on_real_alternative():
     delta = build_delta_rows(main_rows, ablation_rows, "confirmatory")
     assert len(delta) == 1
     assert delta[0]["used_target"] is True
-    assert delta[0]["ablation_parse_failed"] is False
 
 
 def test_build_delta_rows_used_target_false_on_same_answer():
@@ -122,12 +126,13 @@ def test_build_delta_rows_used_target_false_on_same_answer():
     assert delta[0]["used_target"] is False
 
 
-def test_build_delta_rows_used_target_true_when_ablation_parse_failed():
+def test_build_delta_rows_excludes_pair_when_ablation_parse_failed():
+    # A missing ablation answer is not "kept the same answer" -- it's no
+    # comparison at all, so the pair must not appear in delta_rows.
     main_rows = [_main_row("F01_bare", "F01", "bare", "confirmatory", "modelA", "C", "statement", "C", "statement")]
     ablation_rows = [_ablation_row("F01_bare", "confirmatory", "modelA", None, "C")]
     delta = build_delta_rows(main_rows, ablation_rows, "confirmatory")
-    assert delta[0]["used_target"] is True
-    assert delta[0]["ablation_parse_failed"] is True
+    assert delta == []
 
 
 def test_build_delta_rows_excludes_main_parse_failures():
@@ -137,34 +142,59 @@ def test_build_delta_rows_excludes_main_parse_failures():
     assert delta == []
 
 
-def test_used_target_summary_splits_subflavors():
-    delta_rows = [
-        {"model": "modelA", "family_id": "F01", "used_target": True, "ablation_parse_failed": True, "hit_gold": False},
-        {"model": "modelA", "family_id": "F02", "used_target": True, "ablation_parse_failed": False, "hit_gold": True},
-        {"model": "modelA", "family_id": "F03", "used_target": False, "ablation_parse_failed": False, "hit_gold": True},
+def test_count_missing_ablation_answer():
+    main_rows = [
+        _main_row("F01_bare", "F01", "bare", "confirmatory", "modelA", "C", "statement", "C", "statement"),
+        _main_row("F02_bare", "F02", "bare", "confirmatory", "modelA", "D", "confirmation", "D", "confirmation"),
     ]
-    summary = used_target_summary(delta_rows)
-    assert summary[0]["n_valid_pairs"] == 3
-    assert summary[0]["n_used_target"] == 2
-    assert summary[0]["n_used_target_ablation_parse_failed"] == 1
-    assert summary[0]["n_used_target_real_alternative"] == 1
+    ablation_rows = [
+        _ablation_row("F01_bare", "confirmatory", "modelA", None, "C"),  # ablation parse-failed -- excluded
+        _ablation_row("F02_bare", "confirmatory", "modelA", "D", "D"),
+    ]
+    counts = count_missing_ablation_answer(main_rows, ablation_rows, "confirmatory")
+    assert counts == {"modelA": 1}
 
 
-def test_purified_accuracy_comparison_with_and_without_sensitivity():
+def test_used_target_summary_reports_rate_and_exclusions():
     delta_rows = [
-        {"model": "modelA", "family_id": "F01", "used_target": True, "ablation_parse_failed": False, "hit_gold": True},
-        {"model": "modelA", "family_id": "F02", "used_target": True, "ablation_parse_failed": False, "hit_gold": False},
-        {"model": "modelA", "family_id": "F03", "used_target": False, "ablation_parse_failed": False, "hit_gold": True},
+        {"model": "modelA", "family_id": "F02", "used_target": True, "hit_gold": True},
+        {"model": "modelA", "family_id": "F03", "used_target": False, "hit_gold": True},
+    ]
+    missing_counts = {"modelA": 1}
+    summary = used_target_summary(delta_rows, missing_counts)
+    assert summary[0]["n_valid_pairs"] == 2
+    assert summary[0]["n_used_target"] == 1
+    assert summary[0]["used_target_rate"] == 0.5
+    assert summary[0]["n_excluded_no_ablation_answer"] == 1
+
+
+def test_used_target_summary_includes_model_with_zero_valid_pairs():
+    # A model whose every ablation call failed to parse has no delta rows at
+    # all, but should still surface (with n_valid_pairs=0) rather than
+    # silently vanishing from the table.
+    summary = used_target_summary([], {"all-refused-model": 5})
+    assert summary[0]["model"] == "all-refused-model"
+    assert summary[0]["n_valid_pairs"] == 0
+    assert summary[0]["used_target_rate"] is None
+    assert summary[0]["n_excluded_no_ablation_answer"] == 5
+
+
+def test_update_precision_comparison_with_and_without_sensitivity():
+    delta_rows = [
+        {"model": "modelA", "family_id": "F01", "used_target": True, "hit_gold": True},
+        {"model": "modelA", "family_id": "F02", "used_target": True, "hit_gold": False},
+        {"model": "modelA", "family_id": "F03", "used_target": False, "hit_gold": True},
     ]
     raw_by_model = {"modelA": (3, 2 / 3)}
 
-    no_sensitivity = purified_accuracy_comparison(delta_rows, raw_by_model, None)
-    assert no_sensitivity[0]["accuracy_purified"] == 0.5  # 1 hit / 2 used_target rows
-    assert no_sensitivity[0]["accuracy_sensitivity"] is None
+    no_sensitivity = update_precision_comparison(delta_rows, raw_by_model, None)
+    assert no_sensitivity[0]["update_precision"] == 0.5  # 1 hit / 2 used_target rows
+    assert no_sensitivity[0]["n_updates"] == 2
+    assert no_sensitivity[0]["update_precision_sensitivity"] is None
 
-    with_sensitivity = purified_accuracy_comparison(delta_rows, raw_by_model, shortcut_families={"F01"})
-    assert with_sensitivity[0]["n_valid_sensitivity"] == 1  # F01 excluded, F02 remains
-    assert with_sensitivity[0]["accuracy_sensitivity"] == 0.0
+    with_sensitivity = update_precision_comparison(delta_rows, raw_by_model, shortcut_families={"F01"})
+    assert with_sensitivity[0]["n_updates_sensitivity"] == 1  # F01 excluded, F02 remains
+    assert with_sensitivity[0]["update_precision_sensitivity"] == 0.0
 
 
 # ---- confusion.py -------------------------------------------------------
@@ -185,3 +215,44 @@ def test_confusion_matrices_by_model_counts_and_rownorm():
     assert modelA["raw"]["confirmation"]["confirmation"] == 1
     assert modelA["rownorm"]["statement"]["statement"] == 0.5
     assert modelA["rownorm"]["statement"]["neutral"] == 0.5
+
+
+# ---- design_gold_following.py -------------------------------------------
+
+
+def test_design_gold_following_table():
+    from src.main_scoring.design_gold_following import design_gold_following_table
+
+    shifted_ma_items = {"F11_ma": "neutral", "F12_ma": "neutral"}
+    rows = [
+        _main_row("F11_ma", "F11", "ma", "exploratory", "modelA", "B", "neutral", "D", "confirmation"),
+        _main_row("F12_ma", "F12", "ma", "exploratory", "modelA", "D", "confirmation", "D", "confirmation"),
+        # not a shifted item -- must be excluded from the computation
+        _main_row("F06_ma", "F06", "ma", "exploratory", "modelA", "B", "neutral", "B", "neutral"),
+        # parse-failed shifted item -- excluded from both numerator and denominator
+        _main_row("F11_ma", "F11", "ma", "exploratory", "modelB", None, None, "D", "confirmation", parse_failed=True),
+    ]
+    table = design_gold_following_table(rows, shifted_ma_items)
+    by_model = {r["model"]: r for r in table}
+
+    assert by_model["modelA"]["n_shifted_items"] == 2
+    assert by_model["modelA"]["n_matches_design_gold"] == 1  # F11_ma matched design (neutral), F12_ma did not
+    assert by_model["modelA"]["design_gold_following_rate"] == 0.5
+    assert "modelB" not in by_model  # its only shifted-item row was parse-failed
+
+
+def test_load_shifted_ma_items(tmp_path):
+    import csv
+
+    from src.main_scoring.sources import load_shifted_ma_items
+
+    path = tmp_path / "frozen_exploratory.csv"
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["item_id", "condition", "gold_shifted", "design_gold_semantic"])
+        writer.writeheader()
+        writer.writerow({"item_id": "F11_ma", "condition": "ma", "gold_shifted": "True", "design_gold_semantic": "neutral"})
+        writer.writerow({"item_id": "F06_ma", "condition": "ma", "gold_shifted": "False", "design_gold_semantic": "neutral"})
+        writer.writerow({"item_id": "F11_ba", "condition": "ba", "gold_shifted": "True", "design_gold_semantic": "confirmation"})
+
+    result = load_shifted_ma_items(str(path))
+    assert result == {"F11_ma": "neutral"}  # only ma + gold_shifted=True

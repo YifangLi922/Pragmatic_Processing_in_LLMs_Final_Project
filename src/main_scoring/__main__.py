@@ -16,17 +16,26 @@ import os
 
 from .accuracy import condition_accuracy_table, margin_stratified_accuracy, margin_stratified_accuracy_by_model
 from .confusion import confusion_matrices_by_model
-from .delta import build_delta_rows, purified_accuracy_comparison, used_target_summary
+from .delta import build_delta_rows, count_missing_ablation_answer, update_precision_comparison, used_target_summary
+from .design_gold_following import design_gold_following_table
 from .report import (
     render_summary,
     write_condition_accuracy,
     write_confusion_variant,
+    write_design_gold_following,
     write_margin_accuracy,
     write_margin_accuracy_by_model,
-    write_purified_accuracy,
+    write_update_precision,
     write_used_target,
 )
-from .sources import PreconditionError, check_preconditions, load_confirmatory_shortcut_families, load_margin_lookup, read_csv
+from .sources import (
+    PreconditionError,
+    check_preconditions,
+    load_confirmatory_shortcut_families,
+    load_margin_lookup,
+    load_shifted_ma_items,
+    read_csv,
+)
 
 
 def main() -> None:
@@ -35,6 +44,7 @@ def main() -> None:
     parser.add_argument("--ablation-results", required=True)
     parser.add_argument("--ablation-item-summary", required=True)
     parser.add_argument("--frozen-dataset", required=True)
+    parser.add_argument("--frozen-exploratory", required=True)
     parser.add_argument("--output-dir", required=True)
     args = parser.parse_args()
 
@@ -80,38 +90,48 @@ def main() -> None:
     delta_confirmatory = build_delta_rows(main_rows, ablation_rows, "confirmatory")
     delta_exploratory = build_delta_rows(main_rows, ablation_rows, "exploratory")
 
-    used_target_confirmatory = used_target_summary(delta_confirmatory)
-    used_target_exploratory = used_target_summary(delta_exploratory)
+    missing_confirmatory = count_missing_ablation_answer(main_rows, ablation_rows, "confirmatory")
+    missing_exploratory = count_missing_ablation_answer(main_rows, ablation_rows, "exploratory")
+
+    used_target_confirmatory = used_target_summary(delta_confirmatory, missing_confirmatory)
+    used_target_exploratory = used_target_summary(delta_exploratory, missing_exploratory)
 
     raw_confirmatory_by_model = {r["model"]: (r["n_valid_overall"], r["accuracy_overall"]) for r in confirmatory_accuracy}
     raw_exploratory_by_model = {r["model"]: (r["n_valid_overall"], r["accuracy_overall"]) for r in exploratory_accuracy}
 
-    purified_confirmatory = purified_accuracy_comparison(delta_confirmatory, raw_confirmatory_by_model, shortcut_families)
-    purified_exploratory = purified_accuracy_comparison(delta_exploratory, raw_exploratory_by_model, None)
+    update_precision_confirmatory = update_precision_comparison(delta_confirmatory, raw_confirmatory_by_model, shortcut_families)
+    update_precision_exploratory = update_precision_comparison(delta_exploratory, raw_exploratory_by_model, None)
 
     used_target_rows = [{"set": "confirmatory", **r} for r in used_target_confirmatory] + [
         {"set": "exploratory", **r} for r in used_target_exploratory
     ]
-    purified_rows = [{"set": "confirmatory", **r} for r in purified_confirmatory] + [
-        {"set": "exploratory", **r} for r in purified_exploratory
+    update_precision_rows = [{"set": "confirmatory", **r} for r in update_precision_confirmatory] + [
+        {"set": "exploratory", **r} for r in update_precision_exploratory
     ]
     write_used_target(used_target_rows, os.path.join(args.output_dir, "used_target_by_model.csv"))
-    write_purified_accuracy(purified_rows, os.path.join(args.output_dir, "purified_accuracy_comparison.csv"))
+    write_update_precision(update_precision_rows, os.path.join(args.output_dir, "update_precision_comparison.csv"))
 
     # ---- 4. confusion matrices (confirmatory only) ----
     matrices = confusion_matrices_by_model(confirmatory_rows)
     write_confusion_variant(matrices, "raw", os.path.join(args.output_dir, "confusion_matrix_confirmatory_counts.csv"))
     write_confusion_variant(matrices, "rownorm", os.path.join(args.output_dir, "confusion_matrix_confirmatory_rownorm.csv"))
 
+    # ---- 5. design-gold following (exploratory shifted "ma" items, qualitative) ----
+    shifted_ma_items = load_shifted_ma_items(args.frozen_exploratory)
+    exploratory_rows_all = [r for r in main_rows if r["set"] == "exploratory"]
+    design_gold_following = design_gold_following_table(exploratory_rows_all, shifted_ma_items)
+    write_design_gold_following(design_gold_following, os.path.join(args.output_dir, "design_gold_following_exploratory.csv"))
+
     # ---- summary ----
     summary = render_summary(
         precondition_ok, precondition_detail,
         confirmatory_accuracy, exploratory_accuracy,
         margin_accuracy,
-        used_target_confirmatory, purified_confirmatory,
-        used_target_exploratory, purified_exploratory,
+        used_target_confirmatory, update_precision_confirmatory,
+        used_target_exploratory, update_precision_exploratory,
         len(shortcut_families),
         {model: m["n_scored"] for model, m in matrices.items()},
+        design_gold_following,
     )
     with open(os.path.join(args.output_dir, "main_scoring_summary.md"), "w", encoding="utf-8") as f:
         f.write(summary)

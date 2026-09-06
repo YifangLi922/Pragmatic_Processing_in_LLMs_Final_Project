@@ -1,0 +1,5 @@
+condition,accuracy,n_folds_used,n_folds_total
+overall,0.849899179529968,3,3
+bare,0.9833333333333334,3,3
+ba,0.6662596662596663,3,3
+ma,0.838562091503268,3,3

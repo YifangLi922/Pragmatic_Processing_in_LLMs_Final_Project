@@ -25,20 +25,21 @@ USED_TARGET_FIELDS = [
     "n_valid_pairs",
     "n_used_target",
     "used_target_rate",
-    "n_used_target_ablation_parse_failed",
-    "n_used_target_real_alternative",
+    "n_excluded_no_ablation_answer",
 ]
 
-PURIFIED_ACCURACY_FIELDS = [
+UPDATE_PRECISION_FIELDS = [
     "set",
     "model",
     "n_valid_raw",
     "accuracy_raw",
-    "n_valid_purified",
-    "accuracy_purified",
-    "n_valid_sensitivity",
-    "accuracy_sensitivity",
+    "n_updates",
+    "update_precision",
+    "n_updates_sensitivity",
+    "update_precision_sensitivity",
 ]
+
+DESIGN_GOLD_FOLLOWING_FIELDS = ["model", "n_shifted_items", "n_matches_design_gold", "design_gold_following_rate"]
 
 
 def _write_rows(path: str, fields: list[str], rows: list[dict]) -> None:
@@ -64,8 +65,12 @@ def write_used_target(rows: list[dict], path: str) -> None:
     _write_rows(path, USED_TARGET_FIELDS, rows)
 
 
-def write_purified_accuracy(rows: list[dict], path: str) -> None:
-    _write_rows(path, PURIFIED_ACCURACY_FIELDS, rows)
+def write_update_precision(rows: list[dict], path: str) -> None:
+    _write_rows(path, UPDATE_PRECISION_FIELDS, rows)
+
+
+def write_design_gold_following(rows: list[dict], path: str) -> None:
+    _write_rows(path, DESIGN_GOLD_FOLLOWING_FIELDS, rows)
 
 
 def write_confusion_variant(matrices_by_model: dict, variant: str, path: str) -> None:
@@ -88,11 +93,12 @@ def render_summary(
     exploratory_accuracy: list[dict],
     margin_accuracy: list[dict],
     used_target_confirmatory: list[dict],
-    purified_confirmatory: list[dict],
+    update_precision_confirmatory: list[dict],
     used_target_exploratory: list[dict],
-    purified_exploratory: list[dict],
+    update_precision_exploratory: list[dict],
     shortcut_family_count: int,
     confusion_n_scored: dict[str, int],
+    design_gold_following: list[dict],
 ) -> str:
     lines = ["# Main experiment scoring summary", ""]
 
@@ -149,7 +155,7 @@ def render_summary(
     )
     lines.append("")
 
-    lines.append("## 3. Target-sentence delta (used_target)")
+    lines.append("## 3. Target-sentence delta (used_target) and update_precision")
     lines.append("")
     lines.append(
         f"**Note:** the ablation's confirmatory shortcut_risk set has **{shortcut_family_count} families**, "
@@ -158,42 +164,57 @@ def render_summary(
         "below rather than silently matching an assumed 8."
     )
     lines.append("")
+    lines.append(
+        "**used_target denominator is both-answered pairs only.** A model that refused to answer the "
+        "ablation (no target sentence) gives no baseline judgment to compare against -- that's excluded "
+        "from the denominator entirely (`n_excluded_no_ablation_answer`), not counted as "
+        "used_target=True. An earlier version of this table counted it as True, which inflated "
+        "gemma-4-31b's and mistral-small-3-24b's rates since they refuse most often in the ablation."
+    )
+    lines.append("")
+    lines.append(
+        "**update_precision is not a corrected accuracy.** It's the accuracy *only on the items where "
+        "the model changed its answer* once shown the target sentence -- a distinct question (\"when the "
+        "model updates on the sentence, is the update usually right?\") reported side by side with raw "
+        "accuracy, never as a replacement for it."
+    )
+    lines.append("")
     lines.append("### confirmatory")
     lines.append("")
-    lines.append("| model | n_valid_pairs | used_target_rate | (of which: ablation parse-failed / real alternative) |")
+    lines.append("| model | n_valid_pairs | used_target_rate | n_excluded_no_ablation_answer |")
     lines.append("|---|---|---|---|")
     for row in used_target_confirmatory:
         lines.append(
             f"| {row['model']} | {row['n_valid_pairs']} | {_fmt_pct(row['used_target_rate'])} | "
-            f"{row['n_used_target_ablation_parse_failed']} / {row['n_used_target_real_alternative']} |"
+            f"{row['n_excluded_no_ablation_answer']} |"
         )
     lines.append("")
-    lines.append("| model | accuracy_raw (n) | accuracy_purified (n) | accuracy_sensitivity (n) |")
+    lines.append("| model | accuracy_raw (n) | update_precision (n) | update_precision_sensitivity (n) |")
     lines.append("|---|---|---|---|")
-    for row in purified_confirmatory:
+    for row in update_precision_confirmatory:
         lines.append(
             f"| {row['model']} | {_fmt_pct(row['accuracy_raw'])} ({row['n_valid_raw']}) | "
-            f"{_fmt_pct(row['accuracy_purified'])} ({row['n_valid_purified']}) | "
-            f"{_fmt_pct(row['accuracy_sensitivity'])} ({row['n_valid_sensitivity']}) |"
+            f"{_fmt_pct(row['update_precision'])} ({row['n_updates']}) | "
+            f"{_fmt_pct(row['update_precision_sensitivity'])} ({row['n_updates_sensitivity']}) |"
         )
     lines.append("")
 
     lines.append("### exploratory (own used_target rate; no sensitivity column -- see note above)")
     lines.append("")
-    lines.append("| model | n_valid_pairs | used_target_rate | (of which: ablation parse-failed / real alternative) |")
+    lines.append("| model | n_valid_pairs | used_target_rate | n_excluded_no_ablation_answer |")
     lines.append("|---|---|---|---|")
     for row in used_target_exploratory:
         lines.append(
             f"| {row['model']} | {row['n_valid_pairs']} | {_fmt_pct(row['used_target_rate'])} | "
-            f"{row['n_used_target_ablation_parse_failed']} / {row['n_used_target_real_alternative']} |"
+            f"{row['n_excluded_no_ablation_answer']} |"
         )
     lines.append("")
-    lines.append("| model | accuracy_raw (n) | accuracy_purified (n) |")
+    lines.append("| model | accuracy_raw (n) | update_precision (n) |")
     lines.append("|---|---|---|")
-    for row in purified_exploratory:
+    for row in update_precision_exploratory:
         lines.append(
             f"| {row['model']} | {_fmt_pct(row['accuracy_raw'])} ({row['n_valid_raw']}) | "
-            f"{_fmt_pct(row['accuracy_purified'])} ({row['n_valid_purified']}) |"
+            f"{_fmt_pct(row['update_precision'])} ({row['n_updates']}) |"
         )
     lines.append("")
 
@@ -205,6 +226,25 @@ def render_summary(
     lines.append("")
     for model in sorted(confusion_n_scored):
         lines.append(f"- {model}: {confusion_n_scored[model]}")
+    lines.append("")
+
+    lines.append("## 5. Design-gold following on shifted exploratory items (qualitative, n=4 families)")
+    lines.append("")
+    lines.append(
+        "For the 4 exploratory families whose \"ma\" condition gold shifted from design (neutral) to "
+        "empirical (confirmation) -- F11/F12/F13/F33 -- what fraction of each model's choice on that "
+        "condition equals the *design* gold (neutral) rather than the *empirical* gold the model is "
+        "actually scored against. F06/F18 are excluded: their \"ma\" gold never shifted, so they can't "
+        "speak to this question. Only 4 items -- report as a qualitative pattern, not a statistic."
+    )
+    lines.append("")
+    lines.append("| model | n_shifted_items | n_matches_design_gold | design_gold_following_rate |")
+    lines.append("|---|---|---|---|")
+    for row in design_gold_following:
+        lines.append(
+            f"| {row['model']} | {row['n_shifted_items']} | {row['n_matches_design_gold']} | "
+            f"{_fmt_pct(row['design_gold_following_rate'])} |"
+        )
     lines.append("")
 
     return "\n".join(lines)
