@@ -14,8 +14,8 @@ data/fake_annotations.json # 5 个假 family（15题）× 4 假标注员，用�
                             # 无多数/自然度不达标三种剔除触发场景，方便测试
 data/reconstructed.json    # 模块1对真实标注数据的还原结果（108题，4标注员），非最终数据集
 data/quality_report.json   # 模块1的质量报告（按标注员：划水/漏答/自然度方差/与设计gold过度一致等）
-SFP标注完整版.xlsx          # 母题对照表（答案键），模块1的 --master 输入
-SFP母语者标注N ....xlsx     # 4 份标注员原始答题表，模块1的 --annotator 输入
+raw_xlsx_data/original_data_with_answers/SFP标注完整版.xlsx   # 母题对照表（答案键），模块1的 --master 输入
+raw_xlsx_data/native_speaker_annotations/SFP母语者标注N ....xlsx  # 标注员原始答题表，模块1的 --annotator 输入
 
 src/reconstruct/            # 模块1：数据读取与还原
   semantics.py               # 从选项文本模式匹配出 statement/confirmation/neutral/distractor
@@ -61,12 +61,12 @@ src/stats/                   # 模块6：McNemar + 描述性图表（mixed-effec
   plots.py                      # 四张图：confusion热图、condition accuracy、family success、model vs human baseline
   __main__.py                    # 命令行入口
 
-tests/test_module1.py       # 单元测试，纯 Python fixture，不需要真实 .xlsx 文件
-tests/test_module2.py       # 单元测试，用 data/fake_annotations.json
-tests/test_module3.py       # 单元测试，用 data/fake_annotations.json（含手算校验的小样例）
-tests/test_module4.py       # 单元测试，全部用 MockProvider，不需要网络/key
-tests/test_module5.py       # 单元测试，手造已知期望结果的小样例
-tests/test_module6.py       # 单元测试，McNemar/出图数据整形单测 + 出图函数冒烟测试
+tests/reconstruct/test_module1.py  # 单元测试，纯 Python fixture，不需要真实 .xlsx 文件
+tests/gold/test_module2.py         # 单元测试，用 data/fake_annotations.json
+tests/agreement/test_module3.py    # 单元测试，用 data/fake_annotations.json（含手算校验的小样例）
+tests/llm_query/test_module4.py    # 单元测试，全部用 MockProvider，不需要网络/key
+tests/scoring/test_module5.py      # 单元测试，手造已知期望结果的小样例
+tests/stats/test_module6.py        # 单元测试，McNemar/出图数据整形单测 + 出图函数冒烟测试
 output/                     # 运行结果落盘目录（.jsonl，每行一条记录）
 ```
 
@@ -121,11 +121,11 @@ python -m src.llm_query --items data/fake_items.json \
 
 ```bash
 python -m src.reconstruct \
-    --master "SFP标注完整版.xlsx" \
-    --annotator A1="SFP母语者标注1 经济学.xlsx" \
-    --annotator A2="SFP母语者标注2 媒体信息.xlsx" \
-    --annotator A3="SFP母语者标注3 材料科学.xlsx" \
-    --annotator A4="SFP母语者标注4 BWL.xlsx" \
+    --master "raw_xlsx_data/original_data_with_answers/SFP标注完整版.xlsx" \
+    --annotator A1="raw_xlsx_data/native_speaker_annotations/SFP母语者标注1 经济学.xlsx" \
+    --annotator A2="raw_xlsx_data/native_speaker_annotations/SFP母语者标注2 媒体信息.xlsx" \
+    --annotator A3="raw_xlsx_data/native_speaker_annotations/SFP母语者标注3 材料科学.xlsx" \
+    --annotator A4="raw_xlsx_data/native_speaker_annotations/SFP母语者标注4 BWL.xlsx" \
     --output data/reconstructed.json \
     --quality-output data/quality_report.json
 ```

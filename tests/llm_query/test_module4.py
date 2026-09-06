@@ -10,7 +10,7 @@ from src.llm_query.providers.base import LLMResponse
 from src.llm_query.providers.mock import MockProvider
 from src.llm_query.runner import load_done_keys, run, run_items
 
-FAKE_ITEMS_PATH = Path(__file__).resolve().parents[1] / "data" / "fake_items.json"
+FAKE_ITEMS_PATH = Path(__file__).resolve().parents[2] / "data" / "fake_items.json"
 
 
 def _sample_item():

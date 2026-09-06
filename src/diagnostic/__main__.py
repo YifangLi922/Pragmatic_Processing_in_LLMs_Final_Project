@@ -6,7 +6,7 @@ section 2): its response-process concerns can't be diagnosed via agreement
 with others, and including it would pollute the pool used to diagnose Econ.
 
 Output layout (one folder per annotator, one subfolder per mode -- see
-diagnostic_output/Diagnostic_Output_README.md for the full explanation):
+intermediate_outputs/diagnostic/Diagnostic_Output_README.md for the full explanation):
 
     {output_dir}/
         diagnostic_summary_all_annotators.csv
@@ -23,7 +23,7 @@ diagnostic_output/Diagnostic_Output_README.md for the full explanation):
 Usage:
     python -m src.diagnostic \\
         --reconstructed data/reconstructed_5ann.json \\
-        --output-dir diagnostic_output
+        --output-dir intermediate_outputs/diagnostic
 """
 
 import argparse
@@ -55,7 +55,7 @@ inclusion, or runs significance tests.
 ## Layout
 
 ```
-diagnostic_output/
+intermediate_outputs/diagnostic/
   diagnostic_summary_all_annotators.csv   <- start here (see below)
   econ/
     mode_A/                               <- primary no-option handling

@@ -3,8 +3,8 @@
 Usage:
     python -m src.human_baseline_core3 \\
         --reconstructed data/reconstructed_5ann.json \\
-        --frozen-dataset frozen_dataset/frozen_dataset.csv \\
-        --output-dir human_baseline_core3_output
+        --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \\
+        --output-dir results/human_baseline_core3
 """
 
 import argparse

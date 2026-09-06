@@ -38,7 +38,7 @@ Exploratory families have two conditions sharing the same human-majority gold by
 | 2:0 (unanimous, 1 abstention) | 5 | 30 | 80.0% |
 | 2:1 (majority, all 3 cast) | 17 | 102 | 82.4% |
 
-Per-model breakdown in margin_stratified_accuracy_by_model.csv. Note there are three margin values in the real data (3:0, 2:1, and 2:0-with-one-abstention), not just the two named in the request -- all three are reported rather than folding the third into either named bucket.
+Per-model breakdown in margin_stratified_accuracy/margin_stratified_accuracy_by_model.csv. Note there are three margin values in the real data (3:0, 2:1, and 2:0-with-one-abstention), not just the two named in the request -- all three are reported rather than folding the third into either named bucket.
 
 ## 3. Target-sentence delta (used_target) and update_precision
 
@@ -88,13 +88,13 @@ Per-model breakdown in margin_stratified_accuracy_by_model.csv. Note there are t
 | mistral-small-3-24b | 61.1% (18) | 87.5% (8) |
 | qwen3-next-80b | 55.6% (18) | 60.0% (10) |
 
-used_target_rate and update_precision broken out by condition (bare/ba/ma), one row per (model, condition), both-answered-pairs denominator per cell: see `used_target_by_model_condition.csv` and `update_precision_by_model_condition.csv`.
+used_target_rate and update_precision broken out by condition (bare/ba/ma), one row per (model, condition), both-answered-pairs denominator per cell: see `target_sentence_delta/used_target_by_model_condition.csv` and `target_sentence_delta/update_precision_by_model_condition.csv`.
 
-**Raw condition accuracy conflates two different things.** Splitting each (model, condition)'s both-answered items by whether the *ablation* answer already equaled gold (prior_correct) or not (prior_incorrect), and reporting each group's own main-experiment accuracy separately, is what actually measures "used the target sentence to fix a wrong judgment" -- only the prior_incorrect group's accuracy answers that question. See `prior_correction_by_model_condition.csv`.
+**Raw condition accuracy conflates two different things.** Splitting each (model, condition)'s both-answered items by whether the *ablation* answer already equaled gold (prior_correct) or not (prior_incorrect), and reporting each group's own main-experiment accuracy separately, is what actually measures "used the target sentence to fix a wrong judgment" -- only the prior_incorrect group's accuracy answers that question. See `target_sentence_delta/prior_correction_by_model_condition.csv`.
 
 ## 4. Confusion matrices -- confirmatory, per model
 
-Full 4x4 raw-count and row-normalized matrices are in confusion_matrix_confirmatory_counts.csv and confusion_matrix_confirmatory_rownorm.csv (rows=gold_semantic, cols=model choice). n_scored (parse_failed=False) per model:
+Full 4x4 raw-count and row-normalized matrices are in confusion_matrices/confusion_matrix_confirmatory_counts.csv and confusion_matrices/confusion_matrix_confirmatory_rownorm.csv (rows=gold_semantic, cols=model choice). n_scored (parse_failed=False) per model:
 
 - deepseek-r1-0528: 60
 - deepseek-v3: 60
