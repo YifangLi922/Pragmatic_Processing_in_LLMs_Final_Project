@@ -19,6 +19,19 @@ def load_margin_lookup(frozen_dataset_path: str) -> dict[str, int]:
     return {row["item_id"]: int(row["margin"]) for row in read_csv(frozen_dataset_path)}
 
 
+def load_shifted_ma_items(frozen_exploratory_path: str) -> dict[str, str]:
+    """item_id -> design_gold_semantic, for exploratory "ma" items whose
+    gold_shifted=True in frozen_exploratory.csv. Derived from the frozen
+    file rather than a hardcoded item list, so it can't silently drift from
+    what was actually frozen.
+    """
+    return {
+        row["item_id"]: row["design_gold_semantic"]
+        for row in read_csv(frozen_exploratory_path)
+        if row["condition"] == "ma" and row["gold_shifted"] == "True"
+    }
+
+
 def load_confirmatory_shortcut_families(ablation_item_summary_path: str) -> set[str]:
     """family_ids with shortcut_risk=True in the confirmatory set, per the
     ablation's own item summary -- not hardcoded, so it can't silently drift

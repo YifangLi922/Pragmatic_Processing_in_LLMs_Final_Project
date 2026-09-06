@@ -1,0 +1,7 @@
+model,n_shifted_items,n_matches_design_gold,design_gold_following_rate
+deepseek-r1-0528,4,4,1.0
+deepseek-v3,4,4,1.0
+gemini-3-flash-preview,4,3,0.75
+gemma-4-31b,4,2,0.5
+mistral-small-3-24b,4,3,0.75
+qwen3-next-80b,4,2,0.5
