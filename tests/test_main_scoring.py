@@ -9,6 +9,7 @@ from src.main_scoring.delta import (
     build_delta_rows,
     count_missing_ablation_answer,
     count_missing_ablation_answer_by_condition,
+    prior_correction_table,
     update_precision_by_condition,
     update_precision_comparison,
     used_target_summary,
@@ -232,6 +233,42 @@ def test_count_missing_ablation_answer_by_condition():
     ]
     counts = count_missing_ablation_answer_by_condition(main_rows, ablation_rows, "confirmatory")
     assert counts == {("modelA", "bare"): 1, ("modelA", "ma"): 0}
+
+
+def test_build_delta_rows_tags_ablation_hit_gold():
+    main_rows = [_main_row("F01_bare", "F01", "bare", "confirmatory", "modelA", "C", "statement", "C", "statement")]
+    ablation_rows = [_ablation_row("F01_bare", "confirmatory", "modelA", "C", "C")]  # ablation already = gold
+    delta = build_delta_rows(main_rows, ablation_rows, "confirmatory")
+    assert delta[0]["ablation_hit_gold"] is True
+    assert delta[0]["gold_letter"] == "C"
+
+
+def test_prior_correction_table_splits_by_ablation_hit_gold_and_reports_main_accuracy():
+    delta_rows = [
+        # prior_correct: ablation already right (D==D); main kept it, right.
+        {"model": "modelA", "condition": "ba", "gold_letter": "D", "ablation_choice": "D", "hit_gold": True, "ablation_hit_gold": True},
+        # prior_correct: ablation already right; main changed away, now wrong.
+        {"model": "modelA", "condition": "ba", "gold_letter": "D", "ablation_choice": "D", "hit_gold": False, "ablation_hit_gold": True},
+        # prior_incorrect: ablation was wrong (B!=D); main corrected it via the target sentence.
+        {"model": "modelA", "condition": "ba", "gold_letter": "D", "ablation_choice": "B", "hit_gold": True, "ablation_hit_gold": False},
+    ]
+    table = prior_correction_table(delta_rows)
+    by_group = {r["group"]: r for r in table}
+
+    assert by_group["prior_correct"]["n_items"] == 2
+    assert by_group["prior_correct"]["accuracy"] == 0.5
+    assert by_group["prior_incorrect"]["n_items"] == 1
+    assert by_group["prior_incorrect"]["accuracy"] == 1.0
+
+
+def test_prior_correction_table_reports_none_accuracy_for_empty_group():
+    delta_rows = [
+        {"model": "modelA", "condition": "ma", "gold_letter": "D", "ablation_choice": "D", "hit_gold": True, "ablation_hit_gold": True},
+    ]
+    table = prior_correction_table(delta_rows)
+    by_group = {r["group"]: r for r in table}
+    assert by_group["prior_incorrect"]["n_items"] == 0
+    assert by_group["prior_incorrect"]["accuracy"] is None
 
 
 def test_update_precision_by_condition_uses_per_cell_raw_accuracy():

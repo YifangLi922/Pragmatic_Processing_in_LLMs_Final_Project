@@ -53,6 +53,8 @@ def build_delta_rows(main_rows: list[dict], ablation_rows: list[dict], set_name:
                 "ablation_choice": abl_choice,
                 "used_target": main_choice != abl_choice,
                 "hit_gold": r["hit_gold"] == "True",
+                "gold_letter": r["gold_letter"],
+                "ablation_hit_gold": abl_choice == r["gold_letter"],
             }
         )
     return rows
@@ -102,6 +104,42 @@ def used_target_summary(delta_rows: list[dict], missing_ablation_counts: dict[st
                 "n_excluded_no_ablation_answer": missing_ablation_counts.get(model, 0),
             }
         )
+    return table
+
+
+def prior_correction_table(delta_rows: list[dict]) -> list[dict]:
+    """Task 3c: within each (model, condition)'s both-answered items, split
+    by whether the *ablation* (no target sentence) answer already equaled
+    gold -- prior_correct vs. prior_incorrect -- and report each group's own
+    main-experiment (with target sentence shown) accuracy and n.
+
+    Raw condition accuracy conflates two different things: "the model was
+    already right without the sentence" and "the model was wrong and the
+    sentence corrected it". Only the prior_incorrect group's accuracy
+    answers the second question -- that's the number to quote as "ability
+    to use the target sentence to fix a wrong judgment", not the overall
+    condition accuracy. A condition accuracy nominally above the human
+    baseline can still turn out to rest almost entirely on prior_correct
+    items, with too few prior_incorrect items to say anything about
+    genuine correction (small-n, not a claim of "the model beats humans").
+    """
+    keys = sorted({(r["model"], r["condition"]) for r in delta_rows})
+    table = []
+    for model, condition in keys:
+        cell_rows = [r for r in delta_rows if r["model"] == model and r["condition"] == condition]
+        for group_name, group_flag in (("prior_correct", True), ("prior_incorrect", False)):
+            group_rows = [r for r in cell_rows if r["ablation_hit_gold"] == group_flag]
+            n = len(group_rows)
+            accuracy = (sum(1 for r in group_rows if r["hit_gold"]) / n) if n else None
+            table.append(
+                {
+                    "model": model,
+                    "condition": condition,
+                    "group": group_name,
+                    "n_items": n,
+                    "accuracy": accuracy,
+                }
+            )
     return table
 
 
