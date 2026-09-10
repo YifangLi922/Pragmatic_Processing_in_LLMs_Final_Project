@@ -1,6 +1,6 @@
 """Module 1: load the master answer-key table (plan section 4.1).
 
-Real file: "SFP标注完整版.xlsx", sheet "研究者答案键". Real column names differ
+Real file: "SFP_master_answer_key.xlsx", sheet "研究者答案键". Real column names differ
 from the plan's placeholder English schema but the structure is the same one
 row per item, keyed by shuffled_index ("题号"):
 
