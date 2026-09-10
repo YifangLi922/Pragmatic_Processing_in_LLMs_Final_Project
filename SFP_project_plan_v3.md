@@ -3,7 +3,6 @@
 **课程：** Pragmatic Processing in Large Language Models（Saarland University, LST）  
 **类型：** 话题二 —— 把语用 probing 方法扩展到新语言 + 新现象（普通话句末语气词）  
 **定位：** 课程项目（小 scope），同时为将来 workshop 投稿预留接口  
-**指导：** 助教 Sasha 看好该选题，欢迎 publication 方向  
 **版本日期：** 2026-08-23
 
 > **本版说明（v3 相比 v2 的核心变化）：**
