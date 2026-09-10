@@ -207,9 +207,9 @@ src/                              # All pipeline code (one subpackage per stage,
 tests/                            # Unit tests, one subfolder per src/ subpackage
 
 docs/                              # Personal research notes and references
-    SFP_project_plan_v3.md         # Original research plan (v3) including research questions, hypotheses, scope (Chinese), summarized in §1 of this README
-    analysis_note_zh.md            # Full analysis narrative this README's §8-10 are based on (Chinese)
-    README_zh.md                   # Earlier-stage Chinese development log (see note above)
+   SFP_project_plan_v3.md         # Original research plan (v3) including research questions, hypotheses, scope (Chinese), summarized in §1 of this README
+   analysis_note_zh.md            # Full analysis narrative this README's §8-10 are based on (Chinese)
+   README_zh.md                   # Earlier-stage Chinese development log (see note above)
 ```
 
 ---
