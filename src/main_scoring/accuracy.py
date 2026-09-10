@@ -5,8 +5,8 @@ Every denominator is parse_failed=False rows only.
 CONDITIONS = ("bare", "ba", "ma")
 
 # Human-readable labels for the margins that actually occur in a pool_core3
-# (3-member) reference pool -- see frozen_dataset/freeze_report.md for the
-# derivation. Any other value is labeled generically rather than crashing.
+# (3-member) reference pool -- see intermediate_outputs/frozen_dataset/freeze_report.md
+# for the derivation. Any other value is labeled generically rather than crashing.
 MARGIN_LABELS = {
     3: "3:0 (unanimous, all 3 cast)",
     2: "2:0 (unanimous, 1 abstention)",

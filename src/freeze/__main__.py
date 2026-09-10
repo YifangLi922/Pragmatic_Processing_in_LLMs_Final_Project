@@ -1,6 +1,6 @@
 """CLI driver for the dataset freeze step.
 
-Reads data/reconstructed_5ann.json (item text) and pool_sensitivity_output/
+Reads data/reconstructed_5ann.json (item text) and intermediate_outputs/pool_sensitivity/
 (core3 classification + empirical gold), joins them into frozen_dataset.csv
 (core3 KEEP families) and frozen_exploratory.csv (core3 COLLAPSE_structural
 families), and writes freeze_report.md.
@@ -8,8 +8,8 @@ families), and writes freeze_report.md.
 Usage:
     python -m src.freeze \\
         --reconstructed data/reconstructed_5ann.json \\
-        --pool-sensitivity-dir pool_sensitivity_output \\
-        --output-dir frozen_dataset
+        --pool-sensitivity-dir intermediate_outputs/pool_sensitivity \\
+        --output-dir intermediate_outputs/frozen_dataset
 """
 
 import argparse
@@ -76,7 +76,7 @@ def run_all(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Freeze the confirmatory + exploratory datasets.")
     parser.add_argument("--reconstructed", required=True, help="Path to module 1's reconstructed items JSON.")
-    parser.add_argument("--pool-sensitivity-dir", required=True, help="Directory with pool_sensitivity_output's CSVs.")
+    parser.add_argument("--pool-sensitivity-dir", required=True, help="Directory with the pool-sensitivity step's CSVs.")
     parser.add_argument("--output-dir", required=True, help="Directory to write the frozen files into.")
     parser.add_argument("--tag-name", default="dataset-frozen-v1", help="Git tag to report provenance for.")
     args = parser.parse_args()
