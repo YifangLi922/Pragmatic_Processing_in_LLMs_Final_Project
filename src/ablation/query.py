@@ -4,8 +4,8 @@ analysis never re-spends API budget).
 
 Usage:
     python -m src.ablation.query \\
-        --frozen-dataset frozen_dataset/frozen_dataset.csv \\
-        --frozen-exploratory frozen_dataset/frozen_exploratory.csv \\
+        --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \\
+        --frozen-exploratory intermediate_outputs/frozen_dataset/frozen_exploratory.csv \\
         --reconstructed data/reconstructed_5ann.json \\
         --output data/ablation_raw.jsonl
 """

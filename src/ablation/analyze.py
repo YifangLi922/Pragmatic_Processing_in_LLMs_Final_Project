@@ -4,11 +4,11 @@ without touching the query step or spending API budget again.
 
 Usage:
     python -m src.ablation.analyze \\
-        --frozen-dataset frozen_dataset/frozen_dataset.csv \\
-        --frozen-exploratory frozen_dataset/frozen_exploratory.csv \\
+        --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \\
+        --frozen-exploratory intermediate_outputs/frozen_dataset/frozen_exploratory.csv \\
         --reconstructed data/reconstructed_5ann.json \\
         --raw data/ablation_raw.jsonl \\
-        --output-dir ablation_output
+        --output-dir intermediate_outputs/ablation
 """
 
 import argparse
