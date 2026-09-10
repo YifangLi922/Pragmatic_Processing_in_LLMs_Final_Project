@@ -25,8 +25,8 @@ item set, the native-speaker annotation and quality-control process used to
 establish ground truth, the code that queries six LLMs, and the analysis
 that scores them against that ground truth and against a human baseline.
 
-**This is the authoritative, up-to-date documentation of the finished
-project**, written for readers who do not read Mandarin. The repository
+This is the up-to-date documentation of the finished
+project, **written for readers who are not Mandarin speakers**. The repository
 also contains `README_zh.md`, which is an earlier-stage Chinese-language
 development log (covering roughly the first third of the project, before
 the dataset was frozen); it is kept for historical continuity but is no
