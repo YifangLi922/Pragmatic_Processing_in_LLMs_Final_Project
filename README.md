@@ -2,9 +2,10 @@
 
 This project tests whether large language models can read the pragmatic
 meaning that Mandarin sentence-final particles add to an utterance, the
-same way native speakers do. The two particles under study are **吧 (ba)**
-and **吗 (ma)**. Both attach to the end of a sentence and, without changing
-its literal content, change the speaker's stance toward it:
+same way native speakers do. The study **centers on the particle 吧 (ba)**;
+**吗 (ma)** and the particle-less "bare" form serve as its two contrast
+conditions. A sentence-final particle attaches to the end of a sentence and,
+without changing its literal content, sets the speaker's stance toward it:
 
 | Form | Literal gloss | Pragmatic effect |
 |---|---|---|
@@ -68,10 +69,21 @@ below). The result runs opposite to the project's original hypothesis
 
 ## 1. Research question and design
 
-**Core question:** can an LLM infer, from context, the stance a Mandarin
-speaker takes toward a proposition when it is marked with 吧 or 吗 — the
-same way a native speaker does — or does it only recognize the particles'
-dictionary meaning?
+**Core question.** The focal particle is **吧 (ba)**. The question is not
+merely whether a model can label 吧 correctly in isolation, but whether it
+shows **systematic contrastive sensitivity** to the speaker stance that 吧
+contributes: when the same proposition `P` is presented bare, with 吧, and
+with 吗, does the model's reading of the speaker's attitude *shift in the
+right direction as the ending changes* — the way a native speaker's does —
+or does it only recognize the particles' dictionary meaning without tracking
+how they interact with context? A secondary question is whether different
+model **families** differ in this ability.
+
+The contrast is what makes 吧's contribution measurable: **bare** `P` is the
+no-particle baseline (a plain assertion), and **+吗** is a neutral-question
+comparison. The bar is deliberately higher than getting any single condition
+right — the claim only holds if the answer *changes appropriately* when the
+ending changes and everything else is held fixed.
 
 **Design — the minimal triplet.** Every test item belongs to a *family*: one
 shared context, one shared target proposition `P`, and one shared
