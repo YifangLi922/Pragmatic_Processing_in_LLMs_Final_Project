@@ -761,8 +761,7 @@ rather than trivially easy or impossibly hard.
 
 One striking mismatch: **native speakers disagree with each other most on
 +ba** (lowest concordance), while **models struggle most with +ma**
-(lowest accuracy). Humans and models find different conditions hard — that
-mismatch is itself part of the story.
+(lowest accuracy). Humans and models find different conditions hard.
 
 **How the five findings fit together.** The central claim — models track the
 textbook function, native speakers track context — rests **directly** on two
