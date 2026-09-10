@@ -2,11 +2,12 @@
 
 Usage:
     python -m src.reconstruct \\
-        --master "SFP标注完整版.xlsx" \\
-        --annotator A1="SFP母语者标注1 经济学.xlsx" \\
-        --annotator A2="SFP母语者标注2 媒体信息.xlsx" \\
-        --annotator A3="SFP母语者标注3 材料科学.xlsx" \\
-        --annotator A4="SFP母语者标注4 BWL.xlsx" \\
+        --master "SFP_master_answer_key.xlsx" \\
+        --annotator Econ="SFP_annotator1_Econ.xlsx" \\
+        --annotator Media="SFP_annotator2_Media.xlsx" \\
+        --annotator Materials="SFP_annotator3_Materials.xlsx" \\
+        --annotator BWL="SFP_annotator4_BWL.xlsx" \\
+        --annotator EngLit="SFP_annotator5_EngLit.xlsx" \\
         --output data/reconstructed.json \\
         --quality-output data/quality_report.json
 """
