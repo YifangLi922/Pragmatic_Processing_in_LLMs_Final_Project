@@ -706,10 +706,6 @@ trial. (`ablation/ablation_results.csv` has the identical schema minus
 
 ## 8. Key findings
 
-*(Condensed from `SFP_分析总结.md`, sections 1–6; its final "remaining
-tasks" and appendix sections are about paper/poster writing and are
-omitted here as no longer relevant.)*
-
 **§0 — Why only 3 of the 5 annotators ("core3") are used as ground truth.**
 Two of the five recruited native speakers were excluded before any
 model-facing analysis:
