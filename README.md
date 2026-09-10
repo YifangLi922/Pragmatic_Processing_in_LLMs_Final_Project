@@ -30,10 +30,8 @@ project**, written for readers who do not read Mandarin. The repository
 also contains `README_zh.md`, which is an earlier-stage Chinese-language
 development log (covering roughly the first third of the project, before
 the dataset was frozen); it is kept for historical continuity but is no
-longer current. `SFP_分析总结.md` (Chinese) is the original analysis
-narrative this README's "Key Findings" section is adapted from, without
-its final "remaining tasks" and appendix sections (both about paper/poster
-writing, not the results themselves).
+longer current. `analysis_note_zh.md` (Chinese) is the original analysis
+narrative this README's "Key Findings" section is adapted from.
 
 ---
 
@@ -138,7 +136,8 @@ it was +ma that collapsed into +ba — see [Finding 2](#8-key-findings).
 
 ```
 item_design/                    # How the test items were designed (see §4)
-  SFP_ba_item_design_framework_v0.3.md   # The construction framework/heuristics
+  item_design_framework_zh.md   # The original construction framework/heuristics in Chinese
+  item_design_framework_en.md   # The translated English construction framework/heuristics
   SFP pilot families.docx                # First-draft write-up: the 10 pilot families
   SFP expanded families.docx             # Draft after expanding to all 36 families
   pilot/
@@ -207,11 +206,9 @@ config/models.yaml               # The 6-model roster (provider/model id/price/n
 src/                              # All pipeline code (one subpackage per stage, see §5)
 tests/                            # Unit tests, one subfolder per src/ subpackage
 
-Econ_diagnostic_spec_for_claude_code.md    # Design spec for the annotator diagnostic (src/diagnostic)
-pool_sensitivity_spec_for_claude_code.md   # Design spec for the pool-sensitivity classification
-SFP_project_plan_v3.md                      # Original research plan (v3): research questions, hypotheses, scope (Chinese)
-SFP_coding plan.md                          # Implementation/handoff plan: data formats + module specs (Chinese)
-SFP_分析总结.md                              # Full analysis narrative this README's §8-10 are based on (Chinese)
+
+SFP_project_plan_v3.md                      # Original research plan (v3): research questions, hypotheses, scope (Chinese), summarized in §1 of this README
+analysis_note_zh.md                              # Full analysis narrative this README's §8-10 are based on (Chinese)
 README_zh.md                                # Earlier-stage Chinese development log (see note above)
 ```
 
@@ -234,8 +231,8 @@ resumable and budget-capped (see [§11](#11-models-cost-and-reproducibility-note
 
 ## 4. Item construction: how the stimuli were built
 
-Full detail is in [`item_design/SFP_ba_item_design_framework_v0.3.md`](item_design/SFP_ba_item_design_framework_v0.3.md)
-(Chinese); this section gives the short version.
+The complete design framework is in [`item_design/item_design_framework_zh.md`](item_design/item_design_framework_zh.md)
+(Chinese) and the condensed English version is in [`item_design/item_design_framework_en.md`](item_design/item_design_framework_en.md). This section gives a summary.
 
 Every family's target proposition `P` had to support a clean three-way
 contrast (bare reads as assertion, +ba as confirmation-seeking, +ma as a
