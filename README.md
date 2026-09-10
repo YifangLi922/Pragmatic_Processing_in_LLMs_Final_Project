@@ -46,7 +46,7 @@ writing, not the results themselves).
 This claim rests **directly** on two pieces of evidence, supported by
 **three further results** that establish the task is valid and identify the
 mechanism behind the raw numbers (see [Key Findings](#8-key-findings)
-below). The result runs opposite to the project's original hypothesis
+below). The result runs opposite to the project's original hypotheses
 (see [§1](#1-research-question-and-design)).
 
 ---
@@ -154,7 +154,6 @@ raw_xlsx_data/                  # Raw spreadsheets, as collected
     SFP_annotator3_Materials.xlsx      # Annotator "Materials" (materials science) -- core3
     SFP_annotator4_BWL.xlsx            # Annotator "BWL" (business administration) -- excluded, see §8 §0
     SFP_annotator5_EngLit.xlsx         # Annotator "EngLit" (English literature) -- core3
-    SFP_pilot_annotator_Architecture.xlsx   # The single pilot annotator (architecture); pilot only, not ground truth
 
 data/                           # Derived data (JSON), used as input further down the pipeline
   reconstructed_5ann.json        # Final reconstruction: 108 items x 5 annotators -- everything
@@ -211,7 +210,8 @@ tests/                            # Unit tests, one subfolder per src/ subpackag
 
 Econ_diagnostic_spec_for_claude_code.md    # Design spec for the annotator diagnostic (src/diagnostic)
 pool_sensitivity_spec_for_claude_code.md   # Design spec for the pool-sensitivity classification
-SFP_coding plan.md                          # Original project/data-format/module plan (Chinese)
+SFP_project_plan_v3.md                      # Original research plan (v3): research questions, hypotheses, scope (Chinese)
+SFP_coding plan.md                          # Implementation/handoff plan: data formats + module specs (Chinese)
 SFP_分析总结.md                              # Full analysis narrative this README's §8-10 are based on (Chinese)
 README_zh.md                                # Earlier-stage Chinese development log (see note above)
 ```
@@ -855,7 +855,11 @@ longer pass as competence.
   single outlier has an outsized effect on the result. A larger pool would
   dilute this, though the underlying tension (majority-vote-based
   exclusion is somewhat self-reinforcing) doesn't fully go away just by
-  adding more annotators.
+  adding more annotators. One related degree of freedom is disclosed openly
+  (see [§4](#4-item-construction-how-the-stimuli-were-built)): the fifth
+  annotator was recruited reactively, after the first four responses had been
+  seen, to replace the capacity lost to the exclusions — under the same
+  pre-specified diagnostic and criteria, but a reactive addition nonetheless.
 - **Text-only presentation is a harder format for +ba specifically.**
   Native-speaker concordance on +ba (78.3%) is markedly lower than on bare
   (98.3%), suggesting that without intonation or a real interactive
@@ -864,9 +868,10 @@ longer pass as competence.
   ratings seen already in the pilot phase, and with a separate particle,
   呢 (ne), being dropped from the study altogether after piloting for a
   related reason.
-- **Free-tier API determinism.** Even at temperature 0, one item (F12) was
-  observed to receive two different answers to an identical prompt on
-  separate calls — a minor but non-zero source of noise.
+- **Residual API non-determinism.** Even at temperature 0, and on the paid
+  serving tier (see [§11](#11-models-cost-and-reproducibility-notes)), one
+  item (F12) was observed to receive two different answers to an identical
+  prompt on separate calls — a minor but non-zero source of noise.
 
 ---
 
