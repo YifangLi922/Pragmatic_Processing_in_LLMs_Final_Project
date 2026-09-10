@@ -1,6 +1,6 @@
 """Module 1: load one annotator's raw answer table (plan section 4.2).
 
-Real file: "SFP母语者标注N ....xlsx", sheet "母语者填写". Columns:
+Real file: "SFP_annotatorN_*.xlsx", sheet "母语者填写". Columns:
 
     题号                                          shuffled_index (join key)
     情景 / 句子 / 问题                              content shown to the annotator

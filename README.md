@@ -142,18 +142,19 @@ item_design/                    # How the test items were designed (see §4)
   SFP pilot families.docx                # First-draft write-up: the 10 pilot families
   SFP expanded families.docx             # Draft after expanding to all 36 families
   pilot/
-    SFP pilot标注表格.xlsx                 # Annotation form given to the 1 pilot annotator
-    SFP pilot母语者标注结果.xlsx            # That pilot annotator's completed responses
+    SFP_pilot_annotation_form.xlsx         # Annotation form given to the 1 pilot annotator
+    SFP_pilot_annotation_result.xlsx       # That pilot annotator's completed responses
 
 raw_xlsx_data/                  # Raw spreadsheets, as collected
   original_data_with_answers/
-    SFP标注完整版.xlsx            # Master item bank + intended ("design") answer key
+    SFP_master_answer_key.xlsx   # Master item bank + intended ("design") answer key
   native_speaker_annotations/
-    SFP母语者标注1 经济学.xlsx     # Annotator "Econ" (economics background)
-    SFP母语者标注2 媒体信息.xlsx    # Annotator "Media" (media studies)
-    SFP母语者标注3 材料科学.xlsx    # Annotator "Materials" (materials science)
-    SFP母语者标注4 BWL.xlsx        # Annotator "BWL" (business administration)
-    SFP母语者标注5 英语文学.xlsx    # Annotator "EngLit" (English literature)
+    SFP_annotator1_Econ.xlsx           # Annotator "Econ" (economics background) -- excluded, see §8 §0
+    SFP_annotator2_Media.xlsx          # Annotator "Media" (media studies) -- core3
+    SFP_annotator3_Materials.xlsx      # Annotator "Materials" (materials science) -- core3
+    SFP_annotator4_BWL.xlsx            # Annotator "BWL" (business administration) -- excluded, see §8 §0
+    SFP_annotator5_EngLit.xlsx         # Annotator "EngLit" (English literature) -- core3
+    SFP_pilot_annotator_Architecture.xlsx   # The single pilot annotator (architecture); pilot only, not ground truth
 
 data/                           # Derived data (JSON), used as input further down the pipeline
   reconstructed_5ann.json        # Final reconstruction: 108 items x 5 annotators -- everything
@@ -270,7 +271,8 @@ Concretely, item authoring worked like this:
    context and phrasing were rewritten by hand, often changing the setting
    completely.
 3. **Pilot phase:** 10 families (30 items) were built first and given to a
-   single native speaker to annotate. This surfaced concrete problems (for
+   single native speaker — an acquaintance of the author (an architecture
+   student) — to annotate. This surfaced concrete problems (for
    instance, +ba items in particular tended to read as less natural than
    the other two conditions in a pure-text, no-intonation format — see
    [Limitations](#9-limitations-and-future-work)). The pilot materials
@@ -281,7 +283,31 @@ Concretely, item authoring worked like this:
    was finalized, option order shuffled per item, and compiled into the
    master answer-key spreadsheet
    ([`raw_xlsx_data/original_data_with_answers/`](raw_xlsx_data/original_data_with_answers/))
-   were the 5 native-speaker annotators recruited to annotate it (§5.1).
+   were the native-speaker annotators recruited to annotate it (§5.1); how
+   that recruitment worked is described next.
+
+**How the annotators were recruited (and why it matters for the ground
+truth).** The single pilot annotator was an acquaintance of the author (the
+architecture student above); because the pilot only informed item revision
+and contributes no ground-truth label, it has no bearing on the reported
+results. For the main annotation, **four native speakers were recruited
+openly and at random through a university group chat** — they did not know
+one another or the author. This arm's-length recruitment is what gives the
+core-3 agreement figure (§8 §0) its weight: independent strangers converging
+on the same reading is evidence about the *items*, not about who was picked.
+
+After the four responses came back, one annotator (**BWL**) showed signs of
+non-independent responding (§8 §0), which left the batch short of usable
+independent annotators. **A fifth native speaker — an English-literature
+student known to the author — was then recruited to restore that lost
+capacity.** This was a *reactive* addition, made after the first responses
+had been seen, so to be explicit about it: the fifth annotator went through
+exactly the *same* blind diagnostic and the *same* pre-specified exclusion
+criteria as everyone else (and passed both), was given no special weight, and
+does not know the other two core-3 annotators — so core-3's cross-annotator
+agreement still reflects independent convergence rather than coordination.
+The exclusion criteria themselves were fixed before the gold labels were
+computed.
 
 ---
 
@@ -302,12 +328,12 @@ distractor).
 
 ```bash
 python -m src.reconstruct \
-    --master "raw_xlsx_data/original_data_with_answers/SFP标注完整版.xlsx" \
-    --annotator Econ="raw_xlsx_data/native_speaker_annotations/SFP母语者标注1 经济学.xlsx" \
-    --annotator Media="raw_xlsx_data/native_speaker_annotations/SFP母语者标注2 媒体信息.xlsx" \
-    --annotator Materials="raw_xlsx_data/native_speaker_annotations/SFP母语者标注3 材料科学.xlsx" \
-    --annotator BWL="raw_xlsx_data/native_speaker_annotations/SFP母语者标注4 BWL.xlsx" \
-    --annotator EngLit="raw_xlsx_data/native_speaker_annotations/SFP母语者标注5 英语文学.xlsx" \
+    --master "raw_xlsx_data/original_data_with_answers/SFP_master_answer_key.xlsx" \
+    --annotator Econ="raw_xlsx_data/native_speaker_annotations/SFP_annotator1_Econ.xlsx" \
+    --annotator Media="raw_xlsx_data/native_speaker_annotations/SFP_annotator2_Media.xlsx" \
+    --annotator Materials="raw_xlsx_data/native_speaker_annotations/SFP_annotator3_Materials.xlsx" \
+    --annotator BWL="raw_xlsx_data/native_speaker_annotations/SFP_annotator4_BWL.xlsx" \
+    --annotator EngLit="raw_xlsx_data/native_speaker_annotations/SFP_annotator5_EngLit.xlsx" \
     --output data/reconstructed_5ann.json \
     --quality-output data/quality_report_5ann.json
 ```
@@ -644,10 +670,14 @@ majority — but that alone is **not** evidence the item set "got better";
 it's simply what happens when you remove one strong disagreeing vote. The
 actual justification for treating the remaining 3 annotators
 ("core3": media studies, materials science, English literature
-backgrounds) as ground truth is that they were recruited independently,
-don't know each other, and still converge on ~72% pairwise agreement
-(chance level, picking among 4 options, is 25%) — a property of the
-*data*, independent of which three people they happen to be.
+backgrounds) as ground truth is that they do not know one another and still
+converge on ~72% pairwise agreement (chance level, picking among 4 options,
+is 25%) — a property of the *data*, independent of which three people they
+happen to be. Two of the three (Media, Materials) were recruited blind
+through a public group chat; the third (EngLit) was recruited later and is
+known to the author (see [§4](#4-item-construction-how-the-stimuli-were-built)
+on recruitment), but does not know the other two, so the cross-annotator
+convergence is still between people who could not have coordinated.
 
 **Main result table** (6 models x 3 conditions, 60 confirmatory items):
 
