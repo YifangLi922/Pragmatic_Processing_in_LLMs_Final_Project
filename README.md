@@ -69,21 +69,25 @@ below). The result runs opposite to the project's original hypothesis
 
 ## 1. Research question and design
 
-**Core question.** The focal particle is **吧 (ba)**. The question is not
-merely whether a model can label 吧 correctly in isolation, but whether it
-shows **systematic contrastive sensitivity** to the speaker stance that 吧
-contributes: when the same proposition `P` is presented bare, with 吧, and
-with 吗, does the model's reading of the speaker's attitude *shift in the
-right direction as the ending changes* — the way a native speaker's does —
-or does it only recognize the particles' dictionary meaning without tracking
-how they interact with context? A secondary question is whether different
-model **families** differ in this ability.
+**Core question.** The focal particle is **吧 (ba)** — specifically its
+*confirmation-seeking / tentative-assertion* use (the reading where the
+speaker leans toward `P` but lowers their commitment and invites the hearer
+to confirm), not the particle's full functional range. The central question
+is whether a model shows **systematic contrastive sensitivity** to the
+stance this 吧 contributes: holding the proposition `P` and the context
+fixed and changing *only* the sentence-final form (bare / 吧 / 吗), does the
+model's reading of the speaker's attitude *shift in the linguistically
+predicted direction* — the way a native speaker's does — or does it only
+recognize the particles' dictionary meaning without tracking how they
+interact with context? Two further questions sit alongside it: whether
+models recover each condition's intended reading at all (per-condition
+accuracy), and whether this sensitivity differs across model **families**.
 
 The contrast is what makes 吧's contribution measurable: **bare** `P` is the
 no-particle baseline (a plain assertion), and **+吗** is a neutral-question
 comparison. The bar is deliberately higher than getting any single condition
-right — the claim only holds if the answer *changes appropriately* when the
-ending changes and everything else is held fixed.
+right — genuine sensitivity requires the answer to *change appropriately*
+when the ending changes and everything else is held fixed.
 
 **Design — the minimal triplet.** Every test item belongs to a *family*: one
 shared context, one shared target proposition `P`, and one shared
@@ -122,10 +126,11 @@ labelled **ASSERT** (statement), **TENTATIVE** (confirmation-seeking),
 **NEUTRAL**, and **DISTRACTOR** — this is the fixed vocabulary used
 everywhere (confusion matrices, figures, CSV columns).
 
-**Original hypothesis (H4):** of the three conditions, +ba would be
-hardest for models, and models would tend to collapse +ba into +ma (i.e.
-misread a confirmation-seeking statement as a neutral question). **The
-result came out the other way around** — see [Finding 2](#8-key-findings).
+**Original hypotheses (H1 and H4):** +ba would be the hardest condition for
+models (H1), and +ba's errors would systematically collapse into +ma — a
+confirmation-seeking statement misread as a neutral question (H4). **Both
+came out the other way around:** models found +ma the hardest condition, and
+it was +ma that collapsed into +ba — see [Finding 2](#8-key-findings).
 
 ---
 
