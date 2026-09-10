@@ -42,8 +42,10 @@ writing, not the results themselves).
 > track the specific context. When the two agree, models look excellent.
 > When they disagree, models fall back to the textbook.**
 
-Four independent pieces of evidence support this (see [Key Findings](#8-key-findings)
-below), and the result runs opposite to the project's original hypothesis
+This claim rests **directly** on two pieces of evidence, supported by
+**three further results** that establish the task is valid and identify the
+mechanism behind the raw numbers (see [Key Findings](#8-key-findings)
+below). The result runs opposite to the project's original hypothesis
 (see [§1](#1-research-question-and-design)).
 
 ---
@@ -332,6 +334,31 @@ python -m src.pool_sensitivity \
     --output-dir intermediate_outputs/pool_sensitivity
 ```
 
+Under the core3 pool, the 36 families classify as follows:
+
+| Class | Count | Meaning | Fate |
+|---|---|---|---|
+| **KEEP** | 20 | every condition has a clear majority gold, and the three golds are distinct | **confirmatory set** |
+| **COLLAPSE_structural** | 6 | two conditions' majority golds land on the same label — the contrast disappears, but the item is otherwise valid | **exploratory set** |
+| **NO_CONSENSUS** | 8 | at least one condition has no majority | dropped |
+| **EXCLUDE_BROKEN** | 2 | a condition's majority landed on the distractor, so the item is broken | dropped |
+
+The **exclusion rate is itself a result**: 8 no-consensus families plus 2
+broken ones (10 of 36) mean that, in a pure-text format, a sizeable share of
+particle-annotation items simply cannot reach native-speaker consensus. This
+is a property of the paradigm, not a flaw in these particular items.
+
+The grid also shows how much the family selection depends on *which*
+annotators are in the pool. Of the 20 core3 KEEP families, 9 change class
+under at least one other pool — but **8 of those 9 are destabilized by Econ
+alone**, not scattered across annotators, which re-confirms the Econ
+diagnostic (§5.2) at the family level. Taking the intersection of all four
+pools (families that survive under *every* annotator choice) leaves **11
+families**. That number is reported as the most conservative lower bound,
+but the main analysis uses the 20 core3 KEEP families: requiring survival
+under the +Econ pool would effectively give the one diagnosed outlier a veto
+over the item set.
+
 ### 5.4 Freeze (`src.freeze`)
 
 Joins the pool-sensitivity classification (under the core3 pool
@@ -359,10 +386,19 @@ and the exact list of gold-shifted items.
 
 Queries all 6 models on the frozen items with the **target sentence
 removed** (context + question + options only, everything else identical).
-This measures each model's default guess when it cannot yet have seen the
-particle at all — used both as a leakage check (does context alone give
-away the answer?) and, more importantly, as the "prior" that
-`target_sentence_delta` compares the real run against.
+
+One consequence of the minimal-triplet design matters for reading this step
+correctly. Within a family, the three conditions share the *same* context
+and differ *only* in the target sentence. Once that sentence is removed, the
+three prompts become byte-for-byte identical, so a model necessarily returns
+the *same* answer for all three conditions of a family. The ablation
+therefore does **not** measure a separate context leak per condition; what
+it measures is each model's single **default answer** for that context when
+no particle has been seen yet — its "prior". This prior is used two ways:
+as a leakage check (if the context alone already forced the gold answer, the
+item would be answerable without the particle) and, more importantly, as the
+baseline that `target_sentence_delta` compares the real,
+sentence-included run against (Findings 3 and 4).
 
 ```bash
 # Step 1: query (resumable; only missing (item, model) pairs are re-queried)
@@ -624,6 +660,17 @@ One striking mismatch: **native speakers disagree with each other most on
 (lowest accuracy). Humans and models find different conditions hard — that
 mismatch is itself part of the story.
 
+**How the five findings fit together.** The central claim — models track the
+textbook function, native speakers track context — rests **directly** on two
+findings: Finding 1 (what models do when the two readings disagree) and
+Finding 2 (the direction in which +ma errors go). Findings 3–5 do not test
+that claim directly; they establish that the task is valid and identify the
+single mechanism (a per-model prior) behind the raw accuracy numbers. Note
+the difference in weight between the two direct findings: Finding 2 is a
+confirmatory result (20 items x 6 models), while Finding 1 is the most
+direct test but rests on only 4 items from the exploratory set. Finding 1 is
+therefore read *together with* Finding 2, not on its own.
+
 **Finding 1 — models track the textbook function, not the context (the
 main claim).** On the 4 exploratory items where native speakers' actual
 reading of +ma drifted from "neutral" to "confirmation-seeking" in
@@ -642,11 +689,26 @@ speaker.** (n=4 — reported as a clean qualitative pattern, not a
 statistic.)
 
 **Finding 2 — +ma gets assimilated toward +ba, reversing the original
-hypothesis (H4).** The confusion matrices show +ma errors (true label
-NEUTRAL) overwhelmingly land on TENTATIVE — the +ba reading — rather than
-anywhere else: 65% of gemma's, 55% of qwen's, 45% of gemini's, and 25% of
-deepseek-r1's +ma errors land on TENTATIVE. H4 predicted the opposite
-direction (+ba collapsing into +ma); the data show the reverse. This
+hypothesis (H4).** The confusion matrices are unambiguous about *where* +ma
+errors go (the correct label for +ma is NEUTRAL): **for every model that
+misreads any +ma item, 100% of those misreadings land on TENTATIVE — the
++ba reading — and none land on ASSERT or on the distractor.** Reading the
+NEUTRAL row of the row-normalized confusion matrix, the split across
+NEUTRAL / TENTATIVE / ASSERT is: gemma 35% / 65% / 0%, qwen 45% / 55% / 0%,
+gemini 55% / 45% / 0%, deepseek-r1 75% / 25% / 0%. The two remaining models,
+deepseek-v3 and mistral, make no +ma errors at all. So across all six models,
+without exception, whenever +ma is misread it is misread as +ba, never as a
+plain assertion.
+
+> **Note on the denominator.** The percentages above are the share of *all*
+> 20 +ma items read as TENTATIVE. Because the ASSERT and DISTRACTOR columns
+> are exactly zero, that share coincides numerically with each model's +ma
+> *error* rate (e.g. gemma's 35% +ma accuracy leaves 65% errors, all of them
+> TENTATIVE). Stated as a fraction of errors, the figure is 100% for every
+> model — the stronger and correct way to phrase it.
+
+H4 predicted the opposite direction (+ba collapsing into +ma); the data show
+the reverse. This
 direction is **also what happens in the human data**: every one of the 6
 naturally-collapsing families and all 4 gold-shifted items drift from
 neutral toward confirmation-seeking, never the other way — a directional
@@ -654,10 +716,11 @@ finding that holds for both humans and models.
 
 **Finding 3 — a single default-answer bias explains both a model's best
 and worst condition.** Each model appears to have one preferred "default"
-semantic label; whichever condition's gold happens to match that default,
-the model looks perfect on it, and whichever doesn't, it collapses:
-- **gemma** defaults to TENTATIVE → 100% on +ba, 35% on +ma (35% turns out
-  to be exactly chance level, see Finding 5).
+semantic label — the answer it gives from context alone, before the particle
+is shown (its ablation "prior", §5.5). Whichever condition's gold happens to
+match that default, the model looks perfect on it; whichever doesn't, it
+collapses:
+- **gemma** defaults to TENTATIVE → 100% on +ba, 35% on +ma.
 - **deepseek-v3** defaults to NEUTRAL → 100% on +ma, 40% on +ba (the mirror
   image).
 - **mistral** shows no strong default → balanced across all three
@@ -665,6 +728,24 @@ the model looks perfect on it, and whichever doesn't, it collapses:
 
 This is one underlying mechanism producing what look like two separate
 patterns (a model's best score and its worst score).
+
+**Why this does not contradict Finding 1.** A natural objection: if models
+were tracking a shared "textbook" function, why do their defaults differ
+(gemma leans TENTATIVE, deepseek-v3 leans NEUTRAL)? Isn't that just an
+arbitrary per-model label preference? The answer is that the two findings
+describe two different situations, which must be kept apart:
+- The **prior** (Finding 3) is what a model answers when the target sentence
+  is *absent*. There is no particle to interpret, so the model falls back to
+  a house preference — and there is no reason those preferences should agree
+  across models.
+- The **textbook claim** (Finding 1) is about what a model does when the
+  target sentence is *present*: given the particle, models apply its
+  conventional dictionary function rather than the context-specific reading a
+  native speaker would give. That behavior is shared across models even when
+  their priors are not.
+
+In short, differing priors are a fact about model defaults, not a
+counter-argument to the textbook claim.
 
 **Finding 4 — most (but not all) of the perfect 100% scores are "already
 knew," not "read the sentence."** Splitting each 100%-accuracy cell by
@@ -694,8 +775,17 @@ experiment (the DISTRACTOR column of every confusion matrix is all zeros).
 This means (a) the four answer options are functioning as intended — the
 real competition is between the three semantic roles, not against an
 obviously-wrong option — and (b) **the effective chance baseline is 33%,
-not 25%**. That reframes gemma's 35% on +ma: it isn't "low," it is
-essentially exactly chance.
+not 25%**.
+
+This reframes gemma's 35% on +ma — but carefully. Its *accuracy* sits at
+chance, yet its *error structure* is the opposite of random. A model
+guessing among the three live options would spread its answers roughly
+33% / 33% / 33% over NEUTRAL / TENTATIVE / ASSERT; gemma instead answers
+35% / 65% / 0%. So gemma is not guessing — it is applying a fixed TENTATIVE
+prior that merely happens to yield a chance-level accuracy number.
+"Accuracy at chance, error structure far from chance" is precisely the
+signature of a standing prior (Finding 3), and is the opposite of what
+genuine guessing would produce.
 
 ---
 
