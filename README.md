@@ -206,10 +206,10 @@ config/models.yaml               # The 6-model roster (provider/model id/price/n
 src/                              # All pipeline code (one subpackage per stage, see §5)
 tests/                            # Unit tests, one subfolder per src/ subpackage
 
-
-SFP_project_plan_v3.md                      # Original research plan (v3): research questions, hypotheses, scope (Chinese), summarized in §1 of this README
-analysis_note_zh.md                              # Full analysis narrative this README's §8-10 are based on (Chinese)
-README_zh.md                                # Earlier-stage Chinese development log (see note above)
+docs/                              # Personal research notes and references
+    SFP_project_plan_v3.md         # Original research plan (v3) including research questions, hypotheses, scope (Chinese), summarized in §1 of this README
+    analysis_note_zh.md            # Full analysis narrative this README's §8-10 are based on (Chinese)
+    README_zh.md                   # Earlier-stage Chinese development log (see note above)
 ```
 
 ---
