@@ -10,10 +10,10 @@ of the jsonl, not a re-query) every time this finishes or is interrupted.
 
 Usage:
     python -m src.main_experiment.query \\
-        --frozen-dataset frozen_dataset/frozen_dataset.csv \\
-        --frozen-exploratory frozen_dataset/frozen_exploratory.csv \\
+        --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \\
+        --frozen-exploratory intermediate_outputs/frozen_dataset/frozen_exploratory.csv \\
         --reconstructed data/reconstructed_5ann.json \\
-        --output-dir main_experiment_output
+        --output-dir intermediate_outputs/main_experiment
 """
 
 import argparse

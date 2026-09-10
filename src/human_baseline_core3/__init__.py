@@ -2,7 +2,7 @@
 families and the core3 pool (Media/Materials/EngLit) only.
 
 Answers a specific question the earlier diagnostic couldn't: the
-diagnostic_output/diagnostic_summary_all_annotators.csv numbers (bare 0.95,
+intermediate_outputs/diagnostic/diagnostic_summary_all_annotators.csv numbers (bare 0.95,
 ba/ma ~0.58) average each of Media/Materials/EngLit's leave-one-out
 agreement against a reference pool that includes Econ, computed over all 36
 families -- 16 of which were later excluded (COLLAPSE/NO_CONSENSUS/
