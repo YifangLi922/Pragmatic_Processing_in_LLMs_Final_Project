@@ -427,68 +427,7 @@ The NEUTRAL row is central to the +吗 analysis. Every observed +吗 error moves
 
 The exploratory set contains four items whose empirical gold differs from their original design label. `design_gold_following/` records whether models follow the original design label rather than the human empirical gold. Because there are only four items, treat percentages as a qualitative pattern.
 
-## 15. CSV column reference
-
-### 15.1 Frozen datasets
-
-Files:
-
-- `intermediate_outputs/frozen_dataset/frozen_dataset.csv`;
-- `intermediate_outputs/frozen_dataset/frozen_exploratory.csv`.
-
-| Column | Meaning |
-|---|---|
-| `family_id` | family identifier, such as `F01` |
-| `item_id` | unique `<family>_<condition>` identifier, such as `F01_ba` |
-| `condition` | `bare`, `ba`, or `ma` |
-| `context_text` | shared situational context |
-| `target_sentence` | target utterance; the only text field that differs within a family |
-| `option_A` … `option_D` | displayed answer options, with one shared order per family |
-| `option_semantic_map` | maps letters to semantic roles |
-| `gold_semantic` | core3 empirical majority role |
-| `gold_letter` | answer letter carrying the empirical gold role |
-| `design_gold_semantic` | intended role: bare→statement, ba→confirmation, ma→neutral |
-| `gold_shifted` | whether empirical and design gold differ |
-| `margin` | core3 vote margin: `3`, `2`, or `1` |
-| `stable_keep_all_pools` | whether the family remains KEEP under all four pools |
-| `collapse_pair` | exploratory only: the conditions sharing a gold label |
-| `collapse_label` | exploratory only: the shared label |
-
-`gold_shifted` is always false in the confirmatory set. The four shifts appear in the exploratory set.
-
-### 15.2 Main and ablation results
-
-Primary file: `intermediate_outputs/main_experiment/main_results.csv`. The ablation result uses the same core schema, without the main-run timestamp.
-
-| Column | Meaning |
-|---|---|
-| `set` | `confirmatory` or `exploratory` |
-| `family_id`, `item_id`, `condition` | item identifiers |
-| `model` | configured model name |
-| `raw_response` | complete model reply |
-| `parsed_choice_letter` | parsed A–D choice; empty on refusal or parse failure |
-| `parsed_choice_semantic` | semantic role obtained from the option map |
-| `gold_letter`, `gold_semantic` | frozen empirical gold |
-| `hit_gold` | whether the parsed semantic response equals gold |
-| `parse_failed` | whether no valid answer letter could be parsed |
-| `timestamp` | main run only: time the call returned |
-
-### 15.3 Prior-correction table
-
-File: `results/main_scoring/target_sentence_delta/prior_correction_by_model_condition.csv`.
-
-| Column | Meaning |
-|---|---|
-| `set` | confirmatory or exploratory |
-| `model` | model name |
-| `condition` | bare, ba, or ma |
-| `group` | `prior_correct` or `prior_incorrect` |
-| `n_items` | number of items having both an ablation and main answer |
-| `accuracy` | full-prompt accuracy within the group; blank when `n_items = 0` |
-
-Ablation refusals reduce `n_items`; they are not treated as ordinary wrong priors.
-
-## 16. Model configuration, cost, and reproducibility
+## 15. Model configuration, cost, and reproducibility
 
 The model roster, exact OpenRouter identifiers, per-model notes, and prices used by the project are stored in [`../config/models.yaml`](../config/models.yaml). Change the model roster there rather than editing code.
 
@@ -500,7 +439,7 @@ The configuration includes a cost guard at `cost_guard.max_cost_usd`, set to `$3
 
 All models were run at `temperature=0` on the same paid serving tier. This reduces one source of variation but does not guarantee deterministic responses. Item F12 returned different answers to an identical prompt on separate calls.
 
-## 17. Shared LLM-query infrastructure
+## 16. Shared LLM-query infrastructure
 
 `src.llm_query` provides the common infrastructure used by both live query stages:
 
