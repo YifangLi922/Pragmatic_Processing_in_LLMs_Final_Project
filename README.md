@@ -203,9 +203,9 @@ Useful entry points:
 - [`results/figures/`](results/figures/) — five poster-ready figures in PNG and PDF;
 - [`intermediate_outputs/frozen_dataset/freeze_report.md`](intermediate_outputs/frozen_dataset/freeze_report.md) — dataset provenance and family selection;
 - [`item_design/item_design_framework_en.md`](item_design/item_design_framework_en.md) — condensed English item-design framework;
-- [Data and annotation methodology](docs/dataset_and_annotation.md)
-- [Reproduction pipeline](docs/pipeline.md)
-- [Results and metrics guide](docs/results_guide.md)
+- [`docs/dataset and annotation.md`](docs/dataset_and_annotation.md) — item construction, annotator recruitment, quality control, gold-label formation, and dataset freezing;
+- [`docs/pipeline.md`](docs/pipeline.md) — full commands, inputs, outputs, testing procedures, cost controls, and reproducibility notes;
+- [`docs/results_guide.md`](docs/results_guide.md) — result-directory map, metric definitions, denominators, CSV schemas, and reporting guidance.
 
 ## Quick start
 
