@@ -1,8 +1,5 @@
 # SFP-ba: Results and Metrics Guide
 
-> **Purpose:** explain how to locate, compare, and report the project's result files  
-> **Intended repository location:** `docs/results_guide.md`
-
 This guide documents the result structure for the SFP-ba project. It explains the confirmatory and exploratory datasets, model and human metrics, context-only ablation, confusion matrices, denominators, CSV fields, figures, and common interpretation errors.
 
 For the research argument, see [`project_report.md`](project_report.md). For commands and provenance, see [`pipeline.md`](pipeline.md). For dataset construction and annotation decisions, see [`dataset_and_annotation.md`](dataset_and_annotation.md).
@@ -358,24 +355,3 @@ Avoid:
 - describing near-33% accuracy as random without checking the confusion pattern;
 - attributing cross-model differences to one architectural or training factor.
 
-## 17. Result-reporting checklist
-
-- [ ] Name the analysis set.
-- [ ] State the item or paired-response denominator.
-- [ ] Distinguish model accuracy from human concordance and LOO.
-- [ ] Separate answer-change frequency from update precision.
-- [ ] Report the direction of errors, not only accuracy.
-- [ ] Label `n=4` findings as qualitative.
-- [ ] Note ablation refusals when paired samples are reduced.
-- [ ] Use the generated table's denominator rather than assuming 20 observations.
-- [ ] Avoid causal claims about model differences.
-- [ ] Link the relevant CSV or figure.
-
-## 18. Related documentation
-
-- [Root README](../README.md)
-- [Full project report](project_report.md)
-- [Reproduction pipeline](pipeline.md)
-- [Dataset and annotation methodology](dataset_and_annotation.md)
-- [Main scoring summary](../results/main_scoring/main_scoring_summary.md)
-- [Human baseline comparison](../results/human_baseline_core3/human_baseline_comparison.md)
