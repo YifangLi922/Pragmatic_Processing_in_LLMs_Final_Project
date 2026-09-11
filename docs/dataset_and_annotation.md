@@ -2,8 +2,6 @@
 
 This document describes the human-data side of the SFP-ba project. It covers item design, LLM assistance and manual revision, piloting, annotator recruitment, annotation fields, automated and descriptive quality control, the core3 gold pool, annotator-pool sensitivity, family classification, and frozen-dataset provenance.
 
-For the research interpretation, see [`project_report.md`](project_report.md). For reproduction commands, see [`pipeline.md`](pipeline.md). For model-result metrics, see [`results_guide.md`](results_guide.md).
-
 ## 1. Dataset purpose
 
 The dataset tests whether changing only a Mandarin sentence-final form changes the interpreted stance of a speaker in a controlled context.
@@ -360,63 +358,4 @@ Any later change to source annotations, exclusion rules, pool membership, or fam
 
 For the full model-result schema, see [`results_guide.md`](results_guide.md).
 
-## 20. Methodological limitations
-
-### 20.1 Small pool
-
-With five recruited annotators and three in the primary pool, each response has substantial influence. Pool sensitivity makes that influence visible but cannot substitute for a larger sample.
-
-### 20.2 Reactive fifth recruitment
-
-The fifth annotator was recruited after the first batch had been reviewed. Applying the same fixed diagnostics reduces but does not eliminate the associated researcher degree of freedom.
-
-### 20.3 Text-only pragmatics
-
-The task removes prosody and real-time interaction. This especially affects +吧, whose confirmation-seeking force may depend on intonation and shared expectations. Human concordance is 78.3% for +吧, compared with 98.3% for bare and 86.7% for +吗.
-
-### 20.4 Fixed label mapping
-
-In confirmatory data, condition and gold role are perfectly associated. This supports a clean diagnostic contrast but permits a default-label strategy. A stronger follow-up dataset should vary contextual readings within each surface condition.
-
-### 20.5 Majority gold simplifies variation
-
-A single empirical label summarizes genuine disagreement. Margins and raw responses are preserved so that disagreement is not erased, but downstream accuracy still reduces each item to one gold role.
-
-### 20.6 Construction coverage is heuristic
-
-Interaction settings and proposition groups improve variety, but they are not balanced experimental factors. The dataset should not be used to make independent claims about those dimensions without redesign and additional sampling.
-
-## 21. Recommended improvements for a follow-up dataset
-
-- recruit a larger, fully independent native-speaker pool;
-- preregister annotator exclusion and gold-construction rules;
-- balance contextual gold roles within each particle condition;
-- include audio or controlled prosodic variants;
-- expand context/canonical conflict cases beyond four items;
-- collect confidence or free-text rationales alongside forced choice;
-- balance answer positions independently while preserving family comparability;
-- retain repeated or attention-check items designed specifically for reliability analysis;
-- report both majority labels and full response distributions.
-
-## 22. Reuse and reporting guidance
-
-When reusing the dataset:
-
-- preserve `family_id` and analyze conditions as related triplets;
-- do not randomize or edit one condition without updating the whole family;
-- use `option_semantic_map`, not raw answer letters, for scoring;
-- keep confirmatory and exploratory sets separate;
-- disclose whether gold comes from core3 or another pool;
-- retain abstentions and vote margins;
-- version any change to annotations or selection rules;
-- describe LLM involvement as stimulus ideation followed by manual review, not fully automatic generation.
-
-When reporting human validation, distinguish:
-
-- five recruited annotators;
-- two quality-control exclusions;
-- three annotators in the primary gold pool;
-- 36 candidate families;
-- 20 confirmatory, 6 exploratory, and 10 excluded families;
-- the 11-family all-pool stability subset.
 
