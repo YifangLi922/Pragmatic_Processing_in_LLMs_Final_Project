@@ -1,8 +1,6 @@
 # SFP-ba: Reproduction Pipeline and Output Reference
 
-This document contains the technical material removed from the root README: environment setup, repository layout, pipeline order, full commands, inputs and outputs, metric definitions, result-folder guidance, CSV schemas, testing, and reproducibility notes.
-
-For the research narrative and interpretation, see [`project_report.md`](project_report.md). For the short project overview, see the [root README](../README.md).
+This document contains the detailed environment setup, repository layout, pipeline order, full commands, inputs and outputs, metric definitions, result-folder guidance, CSV schemas, testing, and reproducibility notes.
 
 ## 1. Requirements and setup
 
@@ -502,17 +500,7 @@ The configuration includes a cost guard at `cost_guard.max_cost_usd`, set to `$3
 
 All models were run at `temperature=0` on the same paid serving tier. This reduces one source of variation but does not guarantee deterministic responses. Item F12 returned different answers to an identical prompt on separate calls.
 
-## 17. Legacy and shared modules
-
-### Earlier scoring prototypes
-
-`src/gold`, `src/scoring`, and `src/stats` were written before the dataset was frozen at 36 families, when the project still assumed one fixed annotator pool without a pool-sensitivity stage.
-
-They do not generate the reported files under `results/`. The final analysis uses `src.main_scoring` and `src.results_viz`, which do not import the earlier gold or scoring packages. The older modules remain because their tests document reusable logic.
-
-Within `src/agreement`, older `kappa` and `rates` helpers are likewise not part of the reported pipeline. The `loo_baseline` logic is still used by `src.human_baseline_core3`.
-
-### Shared LLM-query engine
+## 17. Shared LLM-query infrastructure
 
 `src.llm_query` provides the common infrastructure used by both live query stages:
 
