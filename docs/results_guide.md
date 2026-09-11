@@ -2,8 +2,6 @@
 
 This guide documents the result structure for the SFP-ba project. It explains the confirmatory and exploratory datasets, model and human metrics, context-only ablation, confusion matrices, denominators, CSV fields, figures, and common interpretation errors.
 
-For the research argument, see [`project_report.md`](project_report.md). For commands and provenance, see [`pipeline.md`](pipeline.md). For dataset construction and annotation decisions, see [`dataset_and_annotation.md`](dataset_and_annotation.md).
-
 ## 1. Where to start
 
 The best entry point is:
@@ -335,23 +333,4 @@ File: `../results/main_scoring/target_sentence_delta/prior_correction_by_model_c
 
 `accuracy` is blank when `n_items = 0`.
 
-## 16. Recommended reporting language
-
-Prefer formulations that preserve the scope of the evidence:
-
-- “Across the 20 confirmatory +吗 items, every observed model error was TENTATIVE.”
-- “On four exploratory gold-shifted items, models often preferred the original design label; this is a qualitative pattern.”
-- “Human concordance was lowest for +吧, whereas model accuracy was generally lowest for +吗.”
-- “Several perfect condition scores included many already-correct context-only priors.”
-- “No model selected the distractor; 33% is used as a descriptive three-label reference.”
-
-Avoid:
-
-- treating exploratory and confirmatory accuracy as directly comparable;
-- calling repeated ablation rows independent condition-specific prompts;
-- equating `used_target` with a correct update;
-- interpreting a correct prior as proof that the target was ignored;
-- presenting the four exploratory items as a statistically stable estimate;
-- describing near-33% accuracy as random without checking the confusion pattern;
-- attributing cross-model differences to one architectural or training factor.
 
