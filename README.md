@@ -16,7 +16,7 @@ The repository contains the item-design materials, native-speaker annotations, m
 
 ## TL;DR
 
-> ****The results suggest that models generally follow a particle's canonical interpretation, while native speakers are more likely to adjust their interpretation to the local context. When the two agree, models perform well; when they conflict, models often fail to make the same contextual shift as native speakers.**
+> **The results suggest that models generally follow a particle's canonical interpretation, while native speakers are more likely to adjust their interpretation to the local context. When the two agree, models perform well; when they conflict, models often fail to make the same contextual shift as native speakers.**
 
 The clearest confirmatory pattern is directional: whenever a model misinterprets a +吗 item, it selects the **TENTATIVE** interpretation associated with +吧, never **ASSERT** or the distractor. Native speakers show the same direction of collapse in the exploratory data. At the same time, humans and models find different conditions difficult: human agreement is lowest on +吧, while model performance is generally weakest on +吗.
 
