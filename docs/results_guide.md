@@ -1,6 +1,6 @@
-# SFP-ba: Results and Metrics Guide
+# SFP-Project: Results and Metrics Guide
 
-This guide documents the result structure for the SFP-ba project. It explains the confirmatory and exploratory datasets, model and human metrics, context-only ablation, confusion matrices, denominators, CSV fields, figures, and common interpretation errors.
+This guide documents the result structure for the SFP-ba project. It explains the confirmatory and exploratory datasets, model and human metrics, context-only ablation, confusion matrices, and figures.
 
 ## 1. Where to start
 
@@ -49,12 +49,7 @@ Use the exploratory set for questions such as:
 
 ### 2.3 Excluded families
 
-Ten candidate families do not enter either frozen set:
-
-- 8 `NO_CONSENSUS` families, where at least one condition lacks a core3 majority;
-- 2 `EXCLUDE_BROKEN` families, where at least one majority selects the distractor.
-
-These exclusions belong to dataset validation, not model scoring. See [`dataset_and_annotation.md`](dataset_and_annotation.md).
+Ten candidate families were excluded during human-data validation and do not enter model scoring. See `dataset_and_annotation.md` for the exclusion criteria and counts.
 
 ## 3. Semantic labels
 
@@ -274,32 +269,7 @@ Always caption Figure 5 with `n=4`. For Figure 4, retain or report the displayed
 
 ## 15. Primary CSV schemas
 
-### 15.1 Frozen item files
-
-Files:
-
-- `../intermediate_outputs/frozen_dataset/frozen_dataset.csv`;
-- `../intermediate_outputs/frozen_dataset/frozen_exploratory.csv`.
-
-| Column | Meaning |
-|---|---|
-| `family_id` | family identifier such as `F01` |
-| `item_id` | unique family/condition identifier such as `F01_ba` |
-| `condition` | `bare`, `ba`, or `ma` |
-| `context_text` | shared discourse context |
-| `target_sentence` | condition-specific target utterance |
-| `option_A` … `option_D` | answer text in displayed order |
-| `option_semantic_map` | maps each letter to a semantic role |
-| `gold_semantic` | core3 empirical majority role |
-| `gold_letter` | letter carrying the empirical gold role |
-| `design_gold_semantic` | originally intended semantic role |
-| `gold_shifted` | whether empirical and design gold differ |
-| `margin` | core3 vote support: 3, 2, or 1 |
-| `stable_keep_all_pools` | whether the family remains KEEP under all four pools |
-| `collapse_pair` | exploratory only: conditions sharing one label |
-| `collapse_label` | exploratory only: their shared label |
-
-### 15.2 Main experiment results
+### 15.1 Main experiment results
 
 File: `../intermediate_outputs/main_experiment/main_results.csv`.
 
@@ -318,7 +288,7 @@ File: `../intermediate_outputs/main_experiment/main_results.csv`.
 
 The analyzed ablation CSV uses the same core fields but does not include the main-experiment timestamp.
 
-### 15.3 Prior-correction output
+### 15.2 Prior-correction output
 
 File: `../results/main_scoring/target_sentence_delta/prior_correction_by_model_condition.csv`.
 
