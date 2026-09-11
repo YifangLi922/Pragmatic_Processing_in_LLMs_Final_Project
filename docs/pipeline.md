@@ -1,8 +1,5 @@
 # SFP-ba: Reproduction Pipeline and Output Reference
 
-> **Purpose:** reproduce the derived datasets, model runs, analyses, and figures from the repository's source data  
-> **Intended repository location:** `docs/pipeline.md`
-
 This document contains the technical material removed from the root README: environment setup, repository layout, pipeline order, full commands, inputs and outputs, metric definitions, result-folder guidance, CSV schemas, testing, and reproducibility notes.
 
 For the research narrative and interpretation, see [`project_report.md`](project_report.md). For the short project overview, see the [root README](../README.md).
@@ -528,21 +525,3 @@ Within `src/agreement`, older `kappa` and `rates` helpers are likewise not part 
 - per-call cost checks.
 
 The standalone mock command in the testing section is the safest way to verify this layer before using the API.
-
-## 18. Full reproduction checklist
-
-- [ ] Install dependencies.
-- [ ] Copy `.env.example` to `.env` and add the API key.
-- [ ] Run all tests.
-- [ ] Reconstruct the five annotation spreadsheets.
-- [ ] Generate annotator diagnostics.
-- [ ] Run pool sensitivity.
-- [ ] Freeze confirmatory and exploratory datasets.
-- [ ] Run and analyze the context-only ablation.
-- [ ] Run the main model experiment.
-- [ ] Generate main scoring outputs.
-- [ ] Generate the core3 human baseline.
-- [ ] Render all figures.
-- [ ] Check `main_scoring_summary.md` and `freeze_report.md` for expected counts and provenance.
-
-The frozen files should contain 60 confirmatory and 18 exploratory items. Any change to source annotations, pool definitions, or exclusion rules should be treated as a new dataset version rather than silently overwriting the frozen analysis.
