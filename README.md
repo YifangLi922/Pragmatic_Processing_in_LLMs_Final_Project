@@ -10,14 +10,14 @@ without changing its literal content, sets the speaker's stance toward it:
 | Form | Literal gloss | Pragmatic effect |
 |---|---|---|
 | `P` (no particle, "bare") | plain statement | read as a confident **assertion** |
-| `P` + **吧 (ba)** | "P, right?" / "P, I take it" | read as a **tentative, confirmation-seeking** statement — the speaker leans toward believing P but wants it confirmed |
-| `P` + **吗 (ma)** | "Is it the case that P?" | read as a **neutral yes/no question** — the speaker has no stated leaning |
+| `P` + **吧 (ba)** | "P, right?" / "P, I take it" | read as a **tentative, confirmation-seeking** statement: the speaker leans toward believing P but wants it confirmed |
+| `P` + **吗 (ma)** | "Is it the case that P?" | read as a **neutral yes/no question**: the speaker has no stated leaning |
 
-A model that has genuinely learned this should give a different answer to
+A model that has truly learned this should give a different answer to
 "what is the speaker doing here?" depending on which of the three forms it
 sees, even though the surrounding context and the propositional content
 `P` are identical. A model that has only memorized the dictionary
-definitions of 吧/吗 without being sensitive to how they interact with
+definitions of 吧/吗 without being sensitive to
 context might not.
 
 This repository contains the full pipeline: the hand-built + LLM-assisted
@@ -28,21 +28,21 @@ that scores them against that ground truth and against a human baseline.
 This is the up-to-date documentation of the finished
 project, **written for readers who are not Mandarin speakers**. The repository
 also contains `README_zh.md`, which is an earlier-stage Chinese-language
-development log (covering roughly the first third of the project, before
-the dataset was frozen); it is kept for historical continuity but is no
-longer current. `analysis_note_zh.md` (Chinese) is the original analysis
+development log (kept for historical continuity but is no
+longer current). `analysis_note_zh.md` (Chinese) is the original analysis
 narrative this README's "Key Findings" section is adapted from.
 
 ---
 
 ## TL;DR — the main finding
 
-> **Models track the "textbook" function of a particle; native speakers
-> track the specific context. When the two agree, models look excellent.
-> When they disagree, models fall back to the textbook.**
+> **Models tend to follow the textbook description of what a particle usually means,
+> while native speakers are more sensitive to how it is used in the specific context.
+> When the context matches the textbook description, models perform very well.
+> When it does not, models often stick with the textbook interpretation.**
 
-This claim rests **directly** on two pieces of evidence, supported by
-**three further results** that establish the task is valid and identify the
+This conclusion is supported by two main findings, with 
+**three further results** helping validate the task and identify the
 mechanism behind the raw numbers (see [Key Findings](#8-key-findings)
 below). The result runs opposite to the project's original hypotheses
 (see [§1](#1-research-question-and-design)).
@@ -67,32 +67,77 @@ below). The result runs opposite to the project's original hypotheses
 
 ## 1. Research question and design
 
-**Core question.** The focal particle is **吧 (ba)** — specifically its
-*confirmation-seeking / tentative-assertion* use (the reading where the
-speaker leans toward `P` but lowers their commitment and invites the hearer
-to confirm), not the particle's full functional range. The central question
-is whether a model shows **systematic contrastive sensitivity** to the
-stance this 吧 contributes: holding the proposition `P` and the context
-fixed and changing *only* the sentence-final form (bare / 吧 / 吗), does the
-model's reading of the speaker's attitude *shift in the linguistically
-predicted direction* — the way a native speaker's does — or does it only
-recognize the particles' dictionary meaning without tracking how they
-interact with context? Two further questions sit alongside it: whether
-models recover each condition's intended reading at all (per-condition
-accuracy), and whether this sensitivity differs across model **families**.
+**Core question.** This project asks whether LLMs are sensitive to the pragmatic
+contribution of the Mandarin sentence-final particle **吧 (ba)** in context. We
+focus specifically on its *confirmation-seeking / tentative-assertion* use (the
+reading where the speaker leans toward proposition `P` while lowering their
+commitment and inviting the hearer to confirm), rather than on the particle's
+full functional range.
 
-The contrast is what makes 吧's contribution measurable: **bare** `P` is the
-no-particle baseline (a plain assertion), and **+吗** is a neutral-question
-comparison. The bar is deliberately higher than getting any single condition
-right — genuine sensitivity requires the answer to *change appropriately*
-when the ending changes and everything else is held fixed.
+The central question is **contrastive**: when the proposition `P` and the
+discourse context are held constant, does changing *only* the sentence-final
+form (bare / 吧 / 吗) systematically change the model's interpretation of the
+speaker's stance in the direction supported by native-speaker judgments? Two
+additional questions complement this core test: how accurately models recover
+the human-validated interpretation of each individual condition, and how this
+contrastive sensitivity varies across model **families**.
+
+The key evidence comes from the contrast between conditions. **Bare** `P`
+provides a no-particle assertion baseline, while **+吗** provides a
+neutral-question comparison. Performance on any one condition alone is
+therefore not enough: the stronger test is whether a model changes its
+interpretation *appropriately* when the sentence-final form changes and
+everything else remains fixed. Detailed research questions are presented
+as follows.
+
+**RQ1 — Interpretation accuracy**
+
+> **Can LLMs recover the human-validated speaker-stance interpretations
+> associated with bare, +吧, and +吗 forms in controlled Mandarin contexts?**
+
+Primary measures:
+
+- Accuracy(bare)
+- Accuracy(+吧)
+- Accuracy(+吗)
+- Comparison with native-speaker judgments
+
+**RQ2 — Contrastive sensitivity (core RQ)**
+
+> **Holding propositional content and discourse context constant, does changing
+> only the sentence-final form (bare / 吧 / 吗) systematically shift model
+> interpretations in the direction supported by native-speaker judgments?**
+
+Primary measures:
+
+- bare ↔ +吧 pair success
+- +吧 ↔ +吗 pair success
+- bare ↔ +吗 pair success
+- **family success**: all three conditions in the same family are interpreted
+  correctly
+
+RQ2 is the project's central research question because it directly tests the
+experimental manipulation: **sentence-final form**. A model may perform well
+on individual items without reliably distinguishing the three conditions;
+contrastive success therefore provides a stricter test of sensitivity to the
+particle manipulation.
+
+**RQ3 — Model variation**
+
+> **How does contrastive sensitivity to sentence-final form vary across model
+> families?**
+
+Cross-model comparisons are treated as descriptive rather than causal. Model
+families differ in architecture, scale, training data, tokenization,
+instruction tuning, and post-training, so observed differences should not be
+attributed to any single factor.
 
 **Design — the minimal triplet.** Every test item belongs to a *family*: one
-shared context, one shared target proposition `P`, and one shared
-four-option question, realized in three conditions that differ **only** in
-how the target sentence ends (bare / +ba / +ma). Because everything else is
-held fixed within a family, any difference in a model's answer across the
-three conditions can only be attributed to the particle itself.
+shared context, one shared target proposition `P`, and one shared four-option
+question, realized in three conditions that differ only in sentence-final form
+(bare / +吧 / +吗). Holding the rest of the family constant isolates the
+sentence-final form as the experimental manipulation, allowing us to test
+whether the model responds systematically to that contrast.
 
 **Example family** (F01, one of the 20 families used in the main
 analysis; English glosses added):
@@ -121,14 +166,14 @@ analysis; English glosses added):
 By design, bare items are expected to select C, +ba items D, and +ma items
 B. Throughout the code and the output tables these four semantic roles are
 labelled **ASSERT** (statement), **TENTATIVE** (confirmation-seeking),
-**NEUTRAL**, and **DISTRACTOR** — this is the fixed vocabulary used
+**NEUTRAL**, and **DISTRACTOR**. This is the fixed vocabulary used
 everywhere (confusion matrices, figures, CSV columns).
 
-**Original hypotheses (H1 and H4):** +ba would be the hardest condition for
-models (H1), and +ba's errors would systematically collapse into +ma — a
-confirmation-seeking statement misread as a neutral question (H4). **Both
-came out the other way around:** models found +ma the hardest condition, and
-it was +ma that collapsed into +ba — see [Finding 2](#8-key-findings).
+**Original hypotheses (H1 and H2):** +ba would be the hardest condition for
+models (H1), and +ba's errors would systematically collapse into +ma, which is 
+a confirmation-seeking statement misread as a neutral question (H2). 
+**Neither hypothesis was supported:** models found +ma the hardest condition, 
+and it was +ma that collapsed into +ba — see [Finding 2](#8-key-findings).
 
 ---
 
@@ -209,7 +254,7 @@ tests/                            # Unit tests, one subfolder per src/ subpackag
 docs/                              # Personal research notes and references
    SFP_project_plan_v3.md         # Original research plan (v3) including research questions, hypotheses, scope (Chinese), summarized in §1 of this README
    analysis_note_zh.md            # Full analysis narrative this README's §8-10 are based on (Chinese)
-   README_zh.md                   # Earlier-stage Chinese development log (see note above)
+   README_zh.md                   # Earlier-stage Chinese development log
 ```
 
 ---
@@ -236,74 +281,66 @@ The complete design framework is in [`item_design/item_design_framework_zh.md`](
 
 Every family's target proposition `P` had to support a clean three-way
 contrast (bare reads as assertion, +ba as confirmation-seeking, +ma as a
-neutral question), so items were not sampled from a fixed experimental
-design in the usual factorial sense. Instead, the framework document lays
-out a **construction scaffold**, not a set of experimental factors:
+neutral question), These dimensions were used to guide item construction 
+and coverage, not as fully crossed experimental factors. Therefore, 
+the framework document lays out a **construction scaffold**, 
+not a set of experimental factors:
 
 - A **2x2 "interaction setting" grid** (channel: offline / online, x
   relation: personal-peer / role-based-institutional) used to keep the
   *sampling* of contexts varied, so that all 20+ families didn't end up
   reading like the same conversation.
-- **4 researcher-defined "proposition classes"** (identity/classification;
+- **4 proposition categories** (identity/classification;
   external state or result; person-related state/experience;
   future/expected event) used as a *writing heuristic* to keep the content
   of `P` varied, again not as an experimental factor to be analyzed.
 
-Crossing these gives a 4x4 space of 16 candidate cells, used only as
-coverage guidance ("try to touch most of these cells, don't obsess over
-filling every one") — the framework is explicit that **contrast quality
-comes before naturalness, which comes before coverage, which comes before
-exact numerical balance.**
+Combining the four interaction settings with the four proposition groupings
+gives **16 possible sampling combinations**. These combinations served as a
+coverage map rather than a checklist: we aimed for broad representation
+without requiring every combination to be filled. Item quality remained the
+priority, following the principle:
+
+> **contrast quality > naturalness > diversity > exact numerical balance**
 
 Concretely, item authoring worked like this:
 
-1. For a candidate proposition `P`, either the author (a native Mandarin
-   speaker) wrote the context and target sentence directly, **or** asked an
-   LLM (ChatGPT 5.6, reasoning effort set to "high") for candidate sentences
-   that fit a specific cell of the framework above.
-2. LLM-generated candidates were essentially never used verbatim — they
-   tended to read as stiff or artificial. In practice, only the underlying
-   *idea* (the proposition and the intended contrast) was kept, and the
-   context and phrasing were rewritten by hand, often changing the setting
-   completely.
+1. For each candidate proposition `P`, the author either drafted the context
+   and target sentence directly or used an LLM (ChatGPT 5.6, reasoning effort
+   set to "high") to generate possible starting points for a particular part
+   of the sampling framework.
+2. LLM suggestions acted as **starting points rather than
+   final items**. Each candidate was reviewed and manually revised. In many
+   cases, only the underlying proposition or contrast was retained, while the
+   context and wording (and sometimes the interaction setting itself) were
+   substantially rewritten.
 3. **Pilot phase:** 10 families (30 items) were built first and given to a
-   single native speaker — an acquaintance of the author (an architecture
-   student) — to annotate. This surfaced concrete problems (for
-   instance, +ba items in particular tended to read as less natural than
-   the other two conditions in a pure-text, no-intonation format — see
+   single native speaker, an acquaintance of the author, to annotate. This exposed concrete problems
+   (for instance, +ba items in particular tended to read as less natural than
+   the other two conditions in a pure-text, no-intonation format, see
    [Limitations](#9-limitations-and-future-work)). The pilot materials
    (write-up, annotation form, and that annotator's responses) are kept in
    [`item_design/pilot/`](item_design/pilot/).
-4. After revising based on pilot feedback, the set was expanded from 10 to
-   36 families (26 new families added). Only after the full 36-family set
-   was finalized, option order shuffled (once per family, so a family's three
-   conditions share the same A/B/C/D layout), and compiled into the
-   master answer-key spreadsheet
-   ([`raw_xlsx_data/original_data_with_answers/`](raw_xlsx_data/original_data_with_answers/))
-   were the native-speaker annotators recruited to annotate it (§5.1); how
-   that recruitment worked is described next.
+5. After revision based on the pilot feedback, the dataset was expanded from
+   10 to 36 families (26 new families). The author then finalized the full set,
+   shuffled the option order once per family so that all three conditions
+   shared the same A/B/C/D layout, and compiled the items into the master
+   answer-key spreadsheet ([`raw_xlsx_data/original_data_with_answers/`](raw_xlsx_data/original_data_with_answers/)).
+   The main native-speaker annotation began only after these steps were
+   complete.
 
-**How the annotators were recruited (and why it matters for the ground
-truth).** The single pilot annotator was an acquaintance of the author (the
-architecture student above); because the pilot only informed item revision
-and contributes no ground-truth label, it has no bearing on the reported
-results. For the main annotation, **four native speakers were recruited
-openly and at random through a university group chat** — they did not know
-one another or the author. This arm's-length recruitment is what gives the
-core-3 agreement figure (§8 §0) its weight: independent strangers converging
-on the same reading is evidence about the *items*, not about who was picked.
+**Annotator recruitment.** The pilot was completed by one native Mandarin
+speaker known to the author. Because the pilot was used only for item revision,
+this annotator contributed no labels to the final gold set.
 
-After the four responses came back, one annotator (**BWL**) showed signs of
-non-independent responding (§8 §0), which left the batch short of usable
-independent annotators. **A fifth native speaker — an English-literature
-student known to the author — was then recruited to restore that lost
-capacity.** This was a *reactive* addition, made after the first responses
-had been seen, so to be explicit about it: the fifth annotator went through
-exactly the *same* blind diagnostic and the *same* pre-specified exclusion
-criteria as everyone else (and passed both), was given no special weight, and
-does not know the other two core-3 annotators — so core-3's cross-annotator
-agreement still reflects independent convergence rather than coordination.
-The exclusion criteria themselves were fixed before the gold labels were
+For the main annotation, four native Mandarin speakers were recruited through
+an open call in a university group chat. After one annotator (BWL) showed a
+response pattern that raised an independence/QC concern (§8.0), a fifth native
+speaker, known to the author, was recruited to restore the intended annotation
+capacity. This was a reactive addition made after the first batch of responses
+had been collected. The fifth annotator completed the same blind diagnostic
+and was evaluated under the same pre-specified exclusion criteria as the other
+annotators; those criteria were fixed before the empirical gold labels were
 computed.
 
 ---
@@ -799,7 +836,7 @@ speaker.** (n=4 — reported as a clean qualitative pattern, not a
 statistic.)
 
 **Finding 2 — +ma gets assimilated toward +ba, reversing the original
-hypothesis (H4).** The confusion matrices are unambiguous about *where* +ma
+hypothesis (H2).** The confusion matrices are unambiguous about *where* +ma
 errors go (the correct label for +ma is NEUTRAL): **for every model that
 misreads any +ma item, 100% of those misreadings land on TENTATIVE — the
 +ba reading — and none land on ASSERT or on the distractor.** Reading the
@@ -817,7 +854,7 @@ plain assertion.
 > TENTATIVE). Stated as a fraction of errors, the figure is 100% for every
 > model — the stronger and correct way to phrase it.
 
-H4 predicted the opposite direction (+ba collapsing into +ma); the data show
+H2 predicted the opposite direction (+ba collapsing into +ma); the data show
 the reverse. This
 direction is **also what happens in the human data**: every one of the 6
 naturally-collapsing families and all 4 gold-shifted items drift from
