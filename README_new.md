@@ -203,8 +203,9 @@ Useful entry points:
 - [`results/figures/`](results/figures/) — five poster-ready figures in PNG and PDF;
 - [`intermediate_outputs/frozen_dataset/freeze_report.md`](intermediate_outputs/frozen_dataset/freeze_report.md) — dataset provenance and family selection;
 - [`item_design/item_design_framework_en.md`](item_design/item_design_framework_en.md) — condensed English item-design framework;
-- [`docs/analysis_note_zh.md`](docs/analysis_note_zh.md) — full Chinese analysis narrative;
-- [`docs/README_zh.md`](docs/README_zh.md) — earlier Chinese development log retained for historical context.
+- [Data and annotation methodology](docs/dataset_and_annotation.md)
+- [Reproduction pipeline](docs/pipeline.md)
+- [Results and metrics guide](docs/results_guide.md)
 
 ## Quick start
 
