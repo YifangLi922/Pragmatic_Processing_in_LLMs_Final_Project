@@ -1,6 +1,6 @@
-# SFP-ba: Reproduction Pipeline and Output Reference
+# SFP-Project: Reproduction Pipeline and Output Reference
 
-This document contains the detailed environment setup, repository layout, pipeline order, full commands, inputs and outputs, metric definitions, result-folder guidance, CSV schemas, testing, and reproducibility notes.
+This document contains the detailed environment setup, repository layout, pipeline order, full commands, and reproducibility notes.
 
 ## 1. Requirements and setup
 
@@ -152,15 +152,8 @@ python -m src.reconstruct \
 - `data/reconstructed_5ann.json` — 108 items × 5 annotators;
 - `data/quality_report_5ann.json` — automated response-quality flags.
 
-The quality report checks for:
-
-- straight-lining: more than 70% of responses on one answer letter;
-- unanswered items;
-- zero variance in naturalness ratings;
-- flat responding: zero hesitation, zero “no valid option,” and zero naturalness variance together;
-- agreement with the design key that is a statistical outlier relative to the batch (`z > 2`).
-
-These checks inform annotator assessment but do not by themselves create empirical gold labels.
+`quality_report_5ann.json` contains the automated annotation-quality
+indicators used by the later diagnostic stage.
 
 ## 5. Stage 2 — Annotator diagnostics
 
@@ -180,18 +173,11 @@ The output directory contains per-annotator and per-condition diagnostic files. 
 
 [`../intermediate_outputs/diagnostic/Diagnostic_Output_README.md`](../intermediate_outputs/diagnostic/Diagnostic_Output_README.md)
 
-The diagnostic supports the exclusion of Econ for a global confirmation-label response style and BWL for a pattern consistent with non-independent evaluation. The retained Media, Materials, and EngLit annotators form the `core3` pool.
+The diagnostic outputs informed the final annotator-pool decision.
 
 ## 6. Stage 3 — Annotator-pool sensitivity
 
 Package: `src.pool_sensitivity`
-
-For every family, this stage calculates empirical gold labels and classifies the family under four candidate annotator pools:
-
-- core3;
-- core3 + Econ;
-- core3 + BWL;
-- all five annotators.
 
 ```bash
 python -m src.pool_sensitivity \
@@ -199,16 +185,8 @@ python -m src.pool_sensitivity \
     --output-dir intermediate_outputs/pool_sensitivity
 ```
 
-### Family classes
-
-| Class | Definition | Core3 count | Downstream use |
-|---|---|---:|---|
-| `KEEP` | each condition has a clear majority and the three gold labels remain distinct | 20 | confirmatory |
-| `COLLAPSE_structural` | two conditions share an empirical gold label, but the item is otherwise valid | 6 | exploratory |
-| `NO_CONSENSUS` | at least one condition has no majority | 8 | excluded |
-| `EXCLUDE_BROKEN` | at least one condition's majority is the distractor | 2 | excluded |
-
-The pool grid makes family selection auditable. Eleven families remain KEEP under every candidate pool; the primary analysis uses the 20 core3 KEEP families.
+This stage computes empirical gold labels and family classifications
+under four candidate annotator pools.
 
 ## 7. Stage 4 — Dataset freeze
 
@@ -318,6 +296,7 @@ python -m src.main_scoring \
 - `main_scoring_summary.md` — narrated guide to the final tables.
 
 Start with [`../results/main_scoring/main_scoring_summary.md`](../results/main_scoring/main_scoring_summary.md).
+For metric definitions, denominators, and guidance on interpreting these outputs, see [`results_guide.md`](results_guide.md).
 
 ## 11. Stage 8 — Human baseline
 
@@ -331,13 +310,7 @@ python -m src.human_baseline_core3 \
     --frozen-dataset intermediate_outputs/frozen_dataset/frozen_dataset.csv \
     --output-dir results/human_baseline_core3
 ```
-
-### Human metrics
-
-- **Leave-one-out (LOO):** hold out one annotator, build temporary gold from the other two, and score the held-out response. On a 2:1 split, the minority response is necessarily counted as wrong, so LOO is a lower bound.
-- **Concordance:** calculate the proportion of all core3 responses matching the final empirical gold, then average within condition. This answers the same form of question as model accuracy and is the primary human/model comparison.
-
-See [`../results/human_baseline_core3/human_baseline_comparison.md`](../results/human_baseline_core3/human_baseline_comparison.md) for the detailed comparison.
+This stage writes the core3 human baseline used in the final comparison.
 
 ## 12. Stage 9 — Figures
 
@@ -350,15 +323,8 @@ python -m src.results_viz \
     --output-dir results/figures
 ```
 
-Every figure is written as a 300-dpi PNG and a vector PDF. Figures contain no in-image title so that captions can be supplied externally. Model order and condition colors are consistent.
-
-| Figure directory | Content |
-|---|---|
-| `fig1_condition_accuracy/` | grouped accuracy by model and condition with human-reference bands |
-| `fig2_confusion_grid/` | 2 × 3 model confusion-matrix grid with a shared color scale |
-| `fig3_ba_vs_ma_scatter/` | +吧 versus +吗 accuracy, equality line, and human concordance references |
-| `fig4_used_target_by_condition/` | rate of answer change after the target sentence, with denominators |
-| `fig5_design_gold_following/` | qualitative `n=4` design-gold-following comparison |
+This stage renders the five final figures to `results/figures/` as
+300-dpi PNG and vector PDF files.
 
 ## 13. Tests
 
@@ -379,55 +345,7 @@ python -m src.llm_query \
 
 This runs five synthetic items through deterministic mock responses and does not use an API key.
 
-## 14. How to interpret the scoring outputs
-
-### 14.1 Confirmatory versus exploratory
-
-Never combine or directly compare their raw accuracy:
-
-- **confirmatory:** three distinct empirical gold labels per family;
-- **exploratory:** two conditions share an empirical gold label by construction.
-
-Exploratory accuracy can be structurally inflated because one response can be correct for two conditions. Use this set for qualitative analysis only.
-
-### 14.2 Margin-stratified accuracy
-
-The margin records core3 support for an item's gold:
-
-- `3`: unanimous 3:0;
-- `2`: 2:0 with one abstention;
-- `1`: 2:1 majority.
-
-In this dataset, model accuracy remains approximately 80–82% across these margins. The result is retained for completeness but is not a central explanatory axis.
-
-### 14.3 Target-sentence delta metrics
-
-`used_target_by_model[_condition].csv` measures whether the model changed its answer between the context-only and full-prompt run. Its denominator includes only pairs with both answers. An ablation refusal is excluded rather than counted as “did not use the target.”
-
-`update_precision_comparison.csv` and `update_precision_by_model_condition.csv` ask: among cases where the model changed its answer, how often was the new answer correct? Update precision complements raw accuracy; it does not replace it.
-
-`prior_correction_by_model_condition.csv` divides each model/condition cell into:
-
-- `prior_correct`: the context-only answer already equals gold;
-- `prior_incorrect`: the context-only answer differs from gold.
-
-Accuracy in the `prior_incorrect` group is the clearest measure of whether the target sentence corrected a wrong prior. For `prior_correct`, the design cannot determine whether the model actively read the target or retained a fortunate default.
-
-### 14.4 Confusion matrices
-
-Raw-count files end in `_counts.csv`; row-normalized files end in `_rownorm.csv`. Rows and columns use a fixed order:
-
-```text
-ASSERT, TENTATIVE, NEUTRAL, DISTRACTOR
-```
-
-The NEUTRAL row is central to the +吗 analysis. Every observed +吗 error moves to TENTATIVE rather than ASSERT or DISTRACTOR.
-
-### 14.5 Design-gold following
-
-The exploratory set contains four items whose empirical gold differs from their original design label. `design_gold_following/` records whether models follow the original design label rather than the human empirical gold. Because there are only four items, treat percentages as a qualitative pattern.
-
-## 15. Model configuration, cost, and reproducibility
+## 14. Model configuration, cost, and reproducibility
 
 The model roster, exact OpenRouter identifiers, per-model notes, and prices used by the project are stored in [`../config/models.yaml`](../config/models.yaml). Change the model roster there rather than editing code.
 
@@ -439,7 +357,7 @@ The configuration includes a cost guard at `cost_guard.max_cost_usd`, set to `$3
 
 All models were run at `temperature=0` on the same paid serving tier. This reduces one source of variation but does not guarantee deterministic responses. Item F12 returned different answers to an identical prompt on separate calls.
 
-## 16. Shared LLM-query infrastructure
+## 15. Shared LLM-query infrastructure
 
 `src.llm_query` provides the common infrastructure used by both live query stages:
 
