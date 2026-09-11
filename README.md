@@ -141,14 +141,14 @@ This is the most direct evidence that the models favor the canonical particle fu
 
 ### 2. +吗 errors move systematically toward the +吧 interpretation
 
-In the confirmatory set, every +吗 error made by every model is a TENTATIVE response—the interpretation associated with +吧. No +吗 error is an ASSERT or DISTRACTOR response. Among the models that make +吗 errors, the NEUTRAL/TENTATIVE split is:
+In the confirmatory set, every +吗 error made by every model is a TENTATIVE response, which is the interpretation associated with +吧. No +吗 error is an ASSERT or DISTRACTOR response. Among the models that make +吗 errors, the NEUTRAL/TENTATIVE split is:
 
 - Gemma: 35% / 65%;
 - Qwen: 45% / 55%;
 - Gemini: 55% / 45%;
 - DeepSeek R1: 75% / 25%.
 
-DeepSeek V3 and Mistral make no +吗 errors. This direction reverses the original hypothesis: rather than +吧 collapsing toward +吗, +吗 is assimilated toward the +吧-like reading. The human exploratory data show the same direction—all six structurally collapsed families and all four gold-shifted items move from neutral toward confirmation-seeking, never in the reverse direction.
+DeepSeek V3 and Mistral make no +吗 errors. This direction reverses the original hypothesis: instead of +吧 collapsing toward +吗, +吗 is assimilated toward the +吧-like reading. The human exploratory data show the same direction. All six structurally collapsed families and all four gold-shifted items move from neutral toward confirmation-seeking, never in the reverse direction.
 
 ### 3. Model-specific default labels shape both strong and weak scores
 
