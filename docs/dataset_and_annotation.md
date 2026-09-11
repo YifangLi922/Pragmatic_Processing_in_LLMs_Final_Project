@@ -1,6 +1,6 @@
-# SFP-ba: Dataset and Annotation Methodology
+# SFP-Project: Dataset and Annotation Methodology
 
-This document describes the human-data side of the SFP-ba project. It covers item design, LLM assistance and manual revision, piloting, annotator recruitment, annotation fields, automated and descriptive quality control, the core3 gold pool, annotator-pool sensitivity, family classification, and frozen-dataset provenance.
+This document describes the human-data side of the SFP-ba project. It covers item design, piloting, annotator recruitment, automated and descriptive quality control, and frozen-dataset provenance.
 
 ## 1. Dataset purpose
 
@@ -85,7 +85,7 @@ The authoring priority was:
 
 ## 5. LLM assistance and human authorship
 
-Some contexts and propositions were drafted directly. For others, an LLM was used to generate candidate starting points for a selected area of the sampling framework.
+Some contexts and propositions were drafted directly. For others, an LLM (ChatGPT 5.6, thinking level set to high) was used to generate candidate starting points for a selected area of the sampling framework.
 
 The LLM-generated text was not accepted as final stimulus material. Every candidate was reviewed manually. In many cases:
 
