@@ -1,8 +1,5 @@
 # SFP-ba: Dataset and Annotation Methodology
 
-> **Purpose:** document how the stimulus families were constructed, annotated, quality-controlled, classified, and frozen  
-> **Intended repository location:** `docs/dataset_and_annotation.md`
-
 This document describes the human-data side of the SFP-ba project. It covers item design, LLM assistance and manual revision, piloting, annotator recruitment, annotation fields, automated and descriptive quality control, the core3 gold pool, annotator-pool sensitivity, family classification, and frozen-dataset provenance.
 
 For the research interpretation, see [`project_report.md`](project_report.md). For reproduction commands, see [`pipeline.md`](pipeline.md). For model-result metrics, see [`results_guide.md`](results_guide.md).
@@ -423,25 +420,3 @@ When reporting human validation, distinguish:
 - 20 confirmatory, 6 exploratory, and 10 excluded families;
 - the 11-family all-pool stability subset.
 
-## 23. Audit checklist
-
-- [ ] The master answer key and all five annotation sheets are present.
-- [ ] Reconstruction contains 108 items and five annotator records.
-- [ ] Semantic roles are derived through the stored option map.
-- [ ] Quality flags are generated before empirical gold.
-- [ ] Core3 membership is explicit.
-- [ ] Pool sensitivity includes all four candidate pools.
-- [ ] Family counts are 20 KEEP, 6 collapsed, 8 no-consensus, and 2 broken under core3.
-- [ ] Frozen outputs contain 60 confirmatory and 18 exploratory items.
-- [ ] Confirmatory empirical gold matches design gold.
-- [ ] Exploratory gold shifts and collapse pairs are documented.
-- [ ] The freeze report and dataset tag are retained.
-
-## 24. Related documentation
-
-- [Root README](../README.md)
-- [Full project report](project_report.md)
-- [Reproduction pipeline](pipeline.md)
-- [Results and metrics guide](results_guide.md)
-- [Frozen-dataset provenance](../intermediate_outputs/frozen_dataset/freeze_report.md)
-- [Diagnostic output guide](../intermediate_outputs/diagnostic/Diagnostic_Output_README.md)
