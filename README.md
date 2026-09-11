@@ -192,7 +192,7 @@ intermediate_outputs/     QC, dataset-freeze, ablation, and query artifacts
 results/                  final scoring tables, human baselines, and figures
 src/                      reconstruction, querying, scoring, and visualization code
 tests/                    unit tests using synthetic fixtures
-docs/                     project plan, analysis narrative, and earlier documentation
+docs/                     project documentation and analysis
 config/                   model roster and runtime configuration
 ```
 
