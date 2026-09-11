@@ -26,14 +26,7 @@ The empirical gold is not assigned from this table automatically. It is calculat
 
 ## 2. Unit of analysis: the minimal triplet
 
-The basic unit is a **family**, not an isolated item. A family contains three conditions that differ only in sentence-final form.
-
-The minimal-triplet design supports two levels of evaluation:
-
-- **item-level accuracy:** whether one condition receives its empirical gold interpretation;
-- **contrastive family success:** whether all three forms in the same context receive the appropriate, distinct interpretations.
-
-The family structure also determines the ablation design. When the target sentence is removed, all three prompts in a family become identical. Any condition labels attached to the resulting context-only rows are bookkeeping comparisons with three gold labels, not three different contexts.
+The basic unit is a **family**, not an isolated item. A family contains three conditions that differ only in sentence-final form. Gold formation and dataset inclusion are therefore evaluated family-wise: a family enters the confirmatory set only when all three conditions have stable and distinct empirical gold labels.
 
 ## 3. Semantic response roles
 
@@ -257,8 +250,6 @@ The frozen files record the core3 support margin:
 | `1` | 2:1 | majority with one dissenting response |
 
 An item without a majority cannot enter a KEEP family. Margin is preserved so model results can be stratified by human agreement strength.
-
-In the final confirmatory set, model accuracy is broadly similar across margins. This does not change the gold rule; it is a downstream robustness observation.
 
 ## 15. Family classification
 
