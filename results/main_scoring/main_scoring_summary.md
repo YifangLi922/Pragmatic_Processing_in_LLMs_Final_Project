@@ -19,7 +19,7 @@ Model rosters match (6 models), item sets match (78 items), and gold_letter agre
 
 ## 1. Condition accuracy -- exploratory (18 items, NOT comparable to confirmatory)
 
-Exploratory families have two conditions sharing the same human-majority gold by construction (that's why they're COLLAPSE, not KEEP) -- a higher accuracy here reflects that structural baseline, not stronger model performance.
+Exploratory families have two conditions sharing the same human-majority gold by construction (that's why they're COLLAPSE, not KEEP). A  higher accuracy here reflects that structural baseline, not stronger model performance.
 
 | model | n_valid | accuracy | bare (n) | ba (n) | ma (n) |
 |---|---|---|---|---|---|
@@ -38,13 +38,13 @@ Exploratory families have two conditions sharing the same human-majority gold by
 | 2:0 (unanimous, 1 abstention) | 5 | 30 | 80.0% |
 | 2:1 (majority, all 3 cast) | 17 | 102 | 82.4% |
 
-Per-model breakdown in margin_stratified_accuracy/margin_stratified_accuracy_by_model.csv. Note there are three margin values in the real data (3:0, 2:1, and 2:0-with-one-abstention), not just the two named in the request -- all three are reported rather than folding the third into either named bucket.
+Per-model breakdown in margin_stratified_accuracy/margin_stratified_accuracy_by_model.csv. There are three margin values in the real data (3:0, 2:1, and 2:0-with-one-abstention).
 
 ## 3. Target-sentence delta (used_target) and update_precision
 
-**Note:** the ablation's confirmatory shortcut_risk set has **11 families**, not the 8 mentioned in the request -- verified directly against ablation_item_summary.csv (F01/F04/F14/F15/F16/F20/F23/F24/F30/F34/F36). Using the verified 11 for the sensitivity column below rather than silently matching an assumed 8.
+**Note:** the ablation's confirmatory shortcut_risk set has **11 families** (F01/F04/F14/F15/F16/F20/F23/F24/F30/F34/F36). They are used for the sensitivity column below.
 
-**used_target denominator is both-answered pairs only.** A model that refused to answer the ablation (no target sentence) gives no baseline judgment to compare against -- that's excluded from the denominator entirely (`n_excluded_no_ablation_answer`), not counted as used_target=True. An earlier version of this table counted it as True, which inflated gemma-4-31b's and mistral-small-3-24b's rates since they refuse most often in the ablation.
+**used_target denominator is both-answered pairs only.** A model that refused to answer the ablation (no target sentence) gives no baseline judgment to compare against, which is excluded from the denominator entirely (`n_excluded_no_ablation_answer`) and not counted as used_target=True.
 
 **update_precision is not a corrected accuracy.** It's the accuracy *only on the items where the model changed its answer* once shown the target sentence -- a distinct question ("when the model updates on the sentence, is the update usually right?") reported side by side with raw accuracy, never as a replacement for it.
 
