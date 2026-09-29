@@ -92,7 +92,7 @@ The resulting dataset is therefore hand-curated and LLM-assisted rather than aut
 
 ## 6. Pilot phase
 
-The pilot contained **10 families (30 items)** and was completed by one native Mandarin speaker known to the author.
+The pilot contained **10 families (30 items)** and was completed by one native Mandarin speaker (architecture background) known to the author.
 
 Its purpose was formative:
 
@@ -152,7 +152,7 @@ Four native Mandarin speakers were recruited through an open call in a universit
 
 ### 9.2 Fifth annotator
 
-After the first batch was received, one annotator's pattern raised a concern about independent item-by-item evaluation. A fifth native speaker known to the author was recruited to restore the intended annotation capacity.
+After the first batch was received, one annotator's pattern raised a concern about independent evaluation (see 12.2). A fifth native speaker known to the author was recruited to restore the intended annotation capacity.
 
 This addition was reactive and is treated as a disclosed researcher degree of freedom. The fifth annotator nevertheless:
 
