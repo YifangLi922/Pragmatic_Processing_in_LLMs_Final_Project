@@ -1,12 +1,5 @@
 # “吧”类题目构造框架
 
-**项目：** Pragmatic Processing in LLMs — Mandarin sentence-final particles  
-**用途：** 研究者内部的 pilot / 正式题目构造指南（不直接发给母语者标注员）  
-**日期：** 2026-08-23  
-**状态：** 在 v0.2 基础上结合母语者 pilot 反馈，新增 epistemic authority / knowledge-distribution 筛选与 context neutrality 原则
-
----
-
 ## 1. 核心原则：把“取样框架”和“实验操纵”分开
 
 本项目中，“吧”类题目的真正实验操纵只有：
@@ -579,78 +572,19 @@ bare: 电影周五上映
 
 ---
 
-## 12. 重点避免的重复与偏向
-
-在 pilot/正式扩展时做一次全局 sanity check：
-
-- [ ] personal/peer 是否几乎全部使用第二人称？
-- [ ] role-based 是否几乎全部使用非人物主语？
-- [ ] person-related 是否几乎全部是 `你 V过 X`？
-- [ ] external state/result 是否大量重复 `已经……了`？
-- [ ] future/expected event 是否大量重复 `会` 或 `应该/可能/大概`？
-- [ ] identity/classification 是否几乎全部为 `他是职业名词`？
-- [ ] online item 是否过度依赖网络流行语、emoji 或特殊标点？
-- [ ] role-based item 是否过度集中在顾客—店员/客服等强知识不对称场景？
-- [ ] 是否存在“听话人天然更知道 P”的高风险第二人称命题，导致 bare 失衡？
-- [ ] 是否存在“说话人天然更知道 P”的命题，导致 +吧 退化为软化断言？
-- [ ] context 是否直接提供了 P 的证据？
-- [ ] context 是否暗示听话人已经明确知道 P，从而让 bare 变成多余重复？
-- [ ] 同一个 surface pattern 是否占据过高比例？
-- [ ] 同一 family 内除了 particle 之外是否有额外词汇/标点变化？
-- [ ] bare / +吧 / +吗 是否在同一个 context 中都自然，并且三档的差异主要来自 particle？
-
----
-
-## 13. （可选，不一定要做）推荐的数据表字段（与原 schema 兼容）
-
-可在原有 item/result schema 之外，为材料构造增加以下列：
-
-```text
-family_id
-item_id
-particle_condition
-context
-sentence
-channel                  # online / offline
-interaction_relation     # personal_peer / role_based
-proposition_class        # identity / external_state / person_state / future_event
-subject_type             # human_2p / human_3p / proper_name / nonhuman_np / other
-surface_pattern
-epistemic_authority_profile # roughly_shared / recipient_advantaged / speaker_advantaged / unclear
-knowledge_source           # public/shared / personal_experience / role_privileged / context_evidence / other
-source_type               # corpus / subtitle / constructed / adapted
-source_note
-option_order
-gold_semantic
-gold_letter
-construction_notes
-```
-
-这些新增字段主要用于：
-
-- 检查数据集是否被某些模板主导；
-- 检查是否系统性地把某些 proposition class / interaction setting 与知识权威方向绑定；
-- 记录材料 provenance；
-- 在正式写 method 时解释材料如何系统产生；
-- 必要时做 exploratory breakdown，但不预设为主分析。
-
----
-
-## 14. 方法部分可以怎样解释这套框架
+## 12. 方法部分可以怎样解释这套框架
 
 ### 中文概括
 
 > 为保证材料在互动场景、命题内容和表层形式上的多样性，我们使用两个研究者定义的 sampling scaffold。互动场景按交流媒介（online/offline）与互动关系（personal/peer-oriented vs. role-based/institutional）编码；候选命题则按 identity/classification、external state/result、person-related state/experience 和 future/expected event 四类 construction templates 组织。这些维度只用于材料构造和覆盖度控制，并非主实验因素。在进入三条件扩展前，我们额外对候选命题进行 epistemic-authority screening，排除会让说话人或听话人天然拥有压倒性知识权威、从而使某一 particle condition 先天不自然的候选。context 只负责许可话题，不直接提供命题证据，也不预设任一方已经知道答案。每个保留的 base proposition 随后生成 bare、+吧、+吗三个受控条件；family 内其余材料保持一致。
 
-### 英文方法表述（可后续改写进 paper）
+### 英文方法表述
 
 > To ensure lexical, structural, and interactional diversity, we organized candidate items using two researcher-defined sampling scaffolds. Interaction settings were coded along two dimensions—channel (online vs. offline) and interaction relation (personal/peer-oriented vs. role-based/institutional). Candidate propositions were additionally grouped into four construction classes: identity/classification, external state/result, person-related state/experience, and future/expected event. These categories served as material-construction heuristics rather than linguistic categories or experimental factors. Before expanding a proposition into contrastive conditions, we screened for strong asymmetries in epistemic access/rights that would make one condition pragmatically anomalous. Contexts were designed to license the topic while leaving the speaker's epistemic stance underdetermined: they did not supply direct evidence for the proposition or presuppose that either participant already possessed decisive knowledge. Each retained proposition was then expanded into three conditions (bare, +吧, +吗), with context, question, answer options, and option order held constant within a family.
 
 ---
 
-## 15. 文献依据与“研究者自定义”部分的边界
-
-### 15.1 文献直接支持的原则
+## 13. 文献依据
 
 1. **吧的功能范围比“简单不确定性 modal”更宽。**  
    Fang & Hengeveld (2020) 将句末“吧”分析为作用于整个 utterance 的 mitigator，而不是简单的 modal marker。这支持本项目把范围收紧到其中一种 confirmation-seeking / tentative-assertion use，而不是声称覆盖“吧”的全部功能。
@@ -670,36 +604,9 @@ construction_notes
 6. **普通话 aspect / surface structure 本身具有复杂性。**  
    Li & Thompson (1981) 提供普通话功能语法的系统描述；Xiao & McEnery (2004) 对普通话 aspect 做了语料库研究。这些文献可用于支持我们有意识避免把材料过度绑定在某一个 aspectual template（如 `已经……了`）上。
 
-### 15.2 研究者自定义、不可错误归因给文献的部分
-
-以下内容是**本项目自己的设计决策或由 pilot 反馈抽象出的 heuristic**：
-
-- online/offline × personal/peer/role-based 的 2×2；
-- 四种 proposition construction classes；
-- pilot 的 8 core + 2 flexible sampling 方案；
-- subject_type / surface_pattern metadata；
-- epistemic-authority 的“高/中/低风险”快速筛选表；
-- “第 0 问：谁对 P 更有知识权威？”这一 construction filter；
-- 优先采用机构内部共享信息，而不是把 role-based 等同于服务柜台；
-- context 的“三类越界”检查（直接证据 / 说话人权威过高 / 暗示听话人已知）；
-- “同一 surface pattern 尽量不要出现过多”等 heuristic；
-- 对人称、场景与 proposition class 进行 de-correlation 的策略。
-
-因此论文中可以说这些设计**受 conversation-analytic work on epistemics 启发**，但不要写成：
-
-> “Prior work classifies Mandarin ba items into high-, medium-, and low-epistemic-authority risk.”
-
-也不要写：
-
-> “Previous work divides Mandarin propositions into these four classes.”
-
-更准确的写法是：
-
-> “Building on prior work on epistemic gradients and territories of knowledge, we introduced a researcher-defined screening heuristic to avoid candidate propositions whose knowledge distribution made one contrast condition pragmatically anomalous.”
-
 ---
 
-## 16. References
+## 14. References
 
 - Fang, H., & Hengeveld, K. (2020). *A mitigator in Mandarin: The sentence-final particle ba (吧).* **Open Linguistics, 6**, 284–306. https://doi.org/10.1515/opli-2020-0018
 - Gardner, M., Artzi, Y., Basmova, V., Berant, J., Bogin, B., Chen, S., et al. (2020). *Evaluating models’ local decision boundaries via contrast sets.* Findings of EMNLP 2020, 1307–1323. https://aclanthology.org/2020.findings-emnlp.117/
@@ -712,17 +619,4 @@ construction_notes
 - Xiao, R., & McEnery, T. (2004). *Aspect in Mandarin Chinese: A Corpus-based Study.* John Benjamins.
 
 ---
-
-## 17. 当前执行版的一句话总结
-
-> **先用 epistemic-authority “第 0 问”筛掉会让任一条件先天失衡的 P，再检查它能否自然形成 `P / P吧 / P吗`；随后用 2×2 interaction setting 和 4 类 proposition construction classes 检查覆盖度，并主动打散人称、主语类型和 surface pattern 的对应关系。context 只负责许可话题，不提供命题证据、不赋予任一方压倒性知识权威、也不暗示听话人已知答案；最终由母语者 naturalness 与 interpretation agreement 决定材料是否进入 gold set。**
-
----
-
-## 18. 版本记录
-
-| 版本 | 日期 | 主要变更 |
-|---|---|---|
-| v0.2 | 2026-08-19 | 建立 2×2 interaction sampling、四类 proposition construction scaffold、surface-pattern / subject-type 多样性控制 |
-| **v0.3** | **2026-08-23** | 根据母语者 pilot 反馈新增 epistemic-authority “第 0 问”、三档知识权威风险筛选、context 三类越界检查；修正第二人称身份/经历与 role-based 服务柜台示例；补充 Heritage / Kendrick 的 epistemics 文献依据与可选 metadata |
 
