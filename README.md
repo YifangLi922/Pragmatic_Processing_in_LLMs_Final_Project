@@ -1,6 +1,6 @@
 # SFP-ba: Sentence-Final Particle Sensitivity in Large Language Models
 
-This project tests whether large language models interpret the pragmatic meaning of Mandarin sentence-final particles in context in ways that align with native-speaker judgments. It focuses on the confirmation-seeking use of **吧 (ba)**; particle-less declaratives and **吗 (ma)** questions provide two controlled contrasts.
+This project tests whether large language models interpret the speaker stance conveyed by Mandarin sentence-final particles in context in line with native-speaker judgments. It focuses on the confirmation-seeking use of **吧 (ba)**, using bare declaratives and **吗 (ma)** questions as two controlled comparison conditions.
 
 A sentence-final particle does not substantially change the proposition `P`, but it can change the speaker's stance toward that proposition:
 
@@ -16,11 +16,11 @@ The repository contains the item-design materials, native-speaker annotations, m
 
 ## TL;DR
 
-> **The results suggest that models generally follow a particle's canonical interpretation, while native speakers are more likely to adjust their interpretation to the local context. When the two agree, models perform well; when they conflict, models often fail to make the same contextual shift as native speakers.**
+> **The results suggest that models are sensitive to sentence-final form, but do not always adjust their interpretations to context in the same way native speakers do. When native-speaker judgments match a particle's usual interpretation, models often perform well; when context supports a different reading, models are more likely to stay with the particle's usual interpretation.**
 
-The clearest confirmatory pattern is directional: whenever a model misinterprets a +吗 item, it selects the **TENTATIVE** interpretation associated with +吧, never **ASSERT** or the distractor. Native speakers show the same direction of collapse in the exploratory data. At the same time, humans and models find different conditions difficult: human agreement is lowest on +吧, while model performance is generally weakest on +吗.
+The clearest pattern in the confirmatory set is the direction of +吗 errors: every incorrect +吗 response is **TENTATIVE**, which is the confirmation-seeking interpretation associated with +吧, but not **ASSERT** or DISTRACTOR. The exploratory human data show the same direction of shift. Humans and models also differ in which condition is hardest: native-speaker agreement is lowest on +吧, whereas model accuracy is generally lowest on +吗.
 
-These conclusions should be read with two qualifications. The most direct context-versus-canonical comparison contains only four exploratory items, so it is qualitative. In addition, each condition has one fixed intended label, which allows a model-specific default answer to produce a high score without necessarily demonstrating particle-sensitive interpretation.
+Two qualifications are important. First, the most direct comparison between context and the usual particle interpretation contains only four exploratory items, so it should be treated as qualitative evidence. Second, each condition has one fixed gold label in the confirmatory set, so a model can score well partly by favoring that label rather than by consistently using the sentence-final form.
 
 ## Research questions
 
@@ -200,7 +200,7 @@ Useful entry points:
 
 - [`results/main_scoring/main_scoring_summary.md`](results/main_scoring/main_scoring_summary.md) — complete narrated results;
 - [`results/human_baseline_core3/`](results/human_baseline_core3/) — human leave-one-out and concordance baselines;
-- [`results/figures/`](results/figures/) — five poster-ready figures in PNG and PDF;
+- [`results/figures/`](results/figures/) — five result figures in PNG and PDF;
 - [`intermediate_outputs/frozen_dataset/freeze_report.md`](intermediate_outputs/frozen_dataset/freeze_report.md) — dataset provenance and family selection;
 - [`item_design/item_design_framework_en.md`](item_design/item_design_framework_en.md) — condensed English item-design framework;
 - [`docs/dataset and annotation.md`](docs/dataset_and_annotation.md) — item construction, annotator recruitment, quality control, gold-label formation, and dataset freezing;
