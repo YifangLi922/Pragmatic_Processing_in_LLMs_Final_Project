@@ -347,73 +347,9 @@ Online item 可以完全使用标准普通话：
 
 ---
 
-## 9. （可选，不强求一定要做）建议增加的 metadata：subject type 与 surface pattern
+## 9. Pilot：“吧”需要多少 family？
 
-这些变量**不需要进入主实验条件**，只作为研究者的 sanity check。
-
-### 9.1 Subject type
-
-建议记录：
-
-```text
-subject_type:
-- human_2p
-- human_3p
-- proper_name
-- nonhuman_np
-- implicit/other
-```
-
-pilot 阶段无需严格均分，但应避免明显集中，例如：
-
-- 8/10 个 personal item 都是 `你……`
-- 所有 role-based item 都是非人物主语
-
-### 9.2 Surface pattern
-
-建议额外记录：
-
-```text
-surface_pattern:
-- X 是 Y
-- X 是 Y 的
-- X V 过 Y
-- X 在 Y
-- X 有 Y
-- X V 着
-- X 已经 V 了
-- time + event
-- other
-```
-
-**研究者 heuristic：** pilot 中尽量不要让同一种 surface pattern 占据过高比例。可以把“同一模式最好不超过约 2 次”当作内部提醒，但不要把这个数字写成有理论依据的正式 exclusion criterion。
-
-### 9.3 （可选）Epistemic-authority sanity-check metadata
-
-如果后续 family 较多，建议再记录两个**研究者内部检查字段**：
-
-```text
-epistemic_authority_profile:
-- roughly_shared
-- recipient_advantaged
-- speaker_advantaged
-- unclear/mixed
-
-knowledge_source:
-- public/shared
-- personal_experience
-- role_privileged
-- context_evidence
-- other
-```
-
-这些字段的目的只是帮助发现“某一批题天然把知识权威推向一方”的材料偏差，**不预设进入主统计模型，也不把它们当作语言学中的离散类别**。
-
----
-
-## 10. Pilot：“吧”需要多少 family？
-
-### 10.1 目标规模
+### 9.1 目标规模
 
 维持原计划：
 
@@ -421,7 +357,7 @@ knowledge_source:
 - 每个 family 产生 3 个 item：bare / +吧 / +吗
 - 合计 **30 个 pilot items**
 
-### 10.2 不需要填满 2×2×4 的全部 16 格
+### 9.2 不需要填满 2×2×4 的全部 16 格
 
 `2 × 2 interaction cells × 4 proposition classes = 16` 只是**候选空间**，不是 factorial experiment。
 
@@ -430,7 +366,7 @@ knowledge_source:
 - **8 个 core families**：保证四个 interaction cells 各至少 2 个，同时四种 proposition class 各至少出现 2 次；
 - **2 个 flexible families**：根据语料自然度、候选质量和需要补足的结构自由选择。
 
-### 10.3 一个可用的 8-family core coverage
+### 9.3 一个可用的 8-family core coverage
 
 | ID | Channel | Relation | Proposition class |
 |---|---|---|---|
@@ -449,7 +385,7 @@ knowledge_source:
 
 ---
 
-## 11. 从 candidate P 到完整 family 的构造流程
+## 10. 从 candidate P 到完整 family 的构造流程
 
 ### Step 1：先找到 candidate proposition P
 
@@ -572,7 +508,7 @@ bare: 电影周五上映
 
 ---
 
-## 12. 方法部分可以怎样解释这套框架
+## 11. 方法部分可以怎样解释这套框架
 
 ### 中文概括
 
@@ -584,7 +520,7 @@ bare: 电影周五上映
 
 ---
 
-## 13. 文献依据
+## 12. 文献依据
 
 1. **吧的功能范围比“简单不确定性 modal”更宽。**  
    Fang & Hengeveld (2020) 将句末“吧”分析为作用于整个 utterance 的 mitigator，而不是简单的 modal marker。这支持本项目把范围收紧到其中一种 confirmation-seeking / tentative-assertion use，而不是声称覆盖“吧”的全部功能。
@@ -606,7 +542,7 @@ bare: 电影周五上映
 
 ---
 
-## 14. References
+## 13. References
 
 - Fang, H., & Hengeveld, K. (2020). *A mitigator in Mandarin: The sentence-final particle ba (吧).* **Open Linguistics, 6**, 284–306. https://doi.org/10.1515/opli-2020-0018
 - Gardner, M., Artzi, Y., Basmova, V., Berant, J., Bogin, B., Chen, S., et al. (2020). *Evaluating models’ local decision boundaries via contrast sets.* Findings of EMNLP 2020, 1307–1323. https://aclanthology.org/2020.findings-emnlp.117/
