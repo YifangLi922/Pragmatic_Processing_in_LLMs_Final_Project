@@ -1,8 +1,4 @@
-# Item Design Framework for Mandarin Sentence-Final **吧**
-
-**Project:** Pragmatic Processing in LLMs — Mandarin sentence-final particles  
-**Purpose:** Short English-facing summary for dataset construction and repository documentation  
-**Status:** Condensed from the full Chinese framework (`item_design_framework_zh.md`)
+# Item Design Framework for Mandarin Sentence-Final **吧(ba)**
 
 ## 1. Core design principle
 
@@ -90,8 +86,8 @@ bare: 电影周五上映
 
 ## 6. Full framework
 
-This document intentionally omits the detailed risk table, surface-pattern metadata, global de-correlation checklist, pilot coverage scheme, item-by-item construction workflow, and literature discussion. For those details—and for the rationale behind epistemic-authority screening and context neutrality—refer to the full Chinese framework:
+This document intentionally omits the detailed risk table, surface-pattern metadata, pilot coverage scheme, item-by-item construction workflow, and literature discussion. For those details and for the rationale behind epistemic-authority screening and context neutrality, please refer to the full Chinese framework:
 
 > **`item_design_framework_zh.md`**
 
-The short version should therefore be read as a repository-facing summary of the construction logic, not as a replacement for the full internal design guide.
+The short version should be read as a repository-facing summary of the construction logic, not as a replacement for the full internal design guide.
