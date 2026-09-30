@@ -2,7 +2,7 @@
 
 This page is the reader-facing summary of the final model-scoring outputs. It is intended to be understandable without first reading the pipeline documentation.
 
-The **confirmatory set** contains 20 human-validated families, or 60 items. Within each family, the bare, +吧, and +吗 conditions have three distinct empirical gold interpretations. The **exploratory set** contains 6 families, or 18 items, in which two conditions share the same empirical gold label; its accuracy is therefore reported separately and should not be compared directly with confirmatory accuracy.
+The **confirmatory set** contains 20 human-validated families, or 60 items. Within each family, the bare, +吧, and +吗 conditions have three distinct empirical gold interpretations. The **exploratory set** contains 6 families, or 18 items, in which two conditions share the same empirical gold label. Its accuracy is reported separately and should not be compared directly with confirmatory accuracy.
 
 The **context-only ablation** removes the target sentence while keeping the context, question, and answer options unchanged. Comparing the ablation response with the full-prompt response shows whether the model's answer changes once the target sentence is restored.
 
@@ -33,13 +33,13 @@ Each model is scored on 20 bare, 20 +吧, and 20 +吗 items. `n_scored` is the n
 | mistral-small-3-24b | 60 | 91.7% | 85.0% | 90.0% | 100.0% |
 | qwen3-next-80b | 60 | 70.0% | 100.0% | 65.0% | 45.0% |
 
-Overall confirmatory accuracy ranges from 70.0% to 91.7%, while condition-level accuracy ranges from 35.0% to 100.0%. The main pattern is therefore not a uniform model ranking: several models are very strong on one condition and much weaker on another.
+Overall confirmatory accuracy ranges from 70.0% to 91.7%, while condition-level accuracy ranges from 35.0% to 100.0%. The main pattern is not a uniform model ranking: several models are very strong on one condition and much weaker on another.
 
 Detailed tables are in `condition_accuracy/`.
 
 ### 1.2 Exploratory set: 18 items
 
-The exploratory set has a different structure. In every exploratory family, two of the three conditions share the same human-majority gold label. A model that repeatedly gives that shared label can therefore be correct on two conditions without distinguishing the three sentence-final forms.
+The exploratory set has a different structure. In every exploratory family, two of the three conditions share the same human-majority gold label. A model that repeatedly gives that shared label can be correct on two conditions without distinguishing the three sentence-final forms.
 
 For this reason, exploratory accuracy is **not directly comparable** with confirmatory accuracy and should not be interpreted as evidence of stronger or weaker overall model performance.
 
@@ -72,7 +72,7 @@ Pooling the six models over the confirmatory set gives:
 | 2:0 with one abstention | 5 | 30 | 80.0% |
 | 2:1 | 17 | 102 | 82.4% |
 
-Accuracy is nearly unchanged across the three support levels (80.0-82.4%). In this dataset, lower human agreement strength therefore does not correspond to noticeably lower pooled model accuracy. This is a robustness check on this dataset, not evidence that annotation agreement is irrelevant in general.
+Accuracy is nearly unchanged across the three support levels (80.0-82.4%). This is a robustness check on this dataset, not evidence that annotation agreement is irrelevant in general.
 
 The per-model breakdown is in:
 
@@ -91,7 +91,7 @@ Two measures are reported:
 
 These measures answer different questions. The answer-change rate describes **how often** the model changes its response. Update precision describes **how often those changes are correct**.
 
-An unchanged answer does not prove that the model ignored the target sentence, and a changed answer does not by itself prove successful pragmatic interpretation. These are behavioral before/after measures.
+(Note: An unchanged answer does not prove that the model ignored the target sentence, and a changed answer does not by itself prove successful pragmatic interpretation.)
 
 ### 3.1 Denominator for the before/after comparison
 
@@ -172,7 +172,7 @@ separates these two cases for every model and condition:
 - `prior_correct`: the context-only answer already equaled gold;
 - `prior_incorrect`: the context-only answer differed from gold.
 
-Main-experiment accuracy within the `prior_incorrect` group provides the clearest behavioral evidence that restoring the target sentence was associated with correcting an initially wrong judgment. By contrast, a correct result in the `prior_correct` group is compatible both with successful reading of the target sentence and with retaining an already-correct context-conditioned default.
+The `prior_incorrect` group is the more informative one for measuring correction. In these cases, the model first gave a wrong answer from the context alone, but gave the correct answer after the target sentence was restored. This provides clearer evidence that the target sentence helped the model revise its judgment. In the `prior_correct` group, the model was already correct before seeing the target sentence. If it is still correct in the full prompt, we cannot tell whether the target sentence affected its interpretation or whether it simply kept the same already-correct answer.
 
 ---
 
@@ -199,7 +199,7 @@ Use the row-normalized file to compare error direction across models; use the ra
 
 This analysis uses four exploratory +吗 items: **F11, F12, F13, and F33**.
 
-For these items, the original design assigned the +吗 condition the canonical **NEUTRAL** label, but the core3 native-speaker majority judged the same utterance as **TENTATIVE** in its specific context. The model is scored against the empirical human label, but this additional analysis asks whether it instead selects the original design label.
+For these items, the original design expected +吗 to receive its usual **NEUTRAL** reading, while in the specific context, the core3 native-speaker majority instead interpreted it as **TENTATIVE**. The model is scored against the empirical human label, but this additional analysis asks whether it instead selects the original design label.
 
 F06 and F18 are not included because their +吗 gold label did not shift away from the original design label.
 
