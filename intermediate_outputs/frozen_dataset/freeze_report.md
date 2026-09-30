@@ -1,11 +1,11 @@
 # Dataset Freeze Report
 
-Generated from `intermediate_outputs/pool_sensitivity/` (pool_core3). Total families: 36.
-After this report and the two frozen CSVs are committed and tagged, the two CSVs are not edited again.
+Created from `intermediate_outputs/pool_sensitivity/` (pool_core3). Total families: 36.
+Once the two frozen CSVs were committed and tagged, they were treated as read-only and were not edited again.
 
 ## Provenance
 
-Tag `dataset-frozen-v1` -> commit `4f3e11d49ad7ed82e2e84c255be346ad05b5ba92`. frozen_dataset.csv and frozen_exploratory.csv are byte-identical to that commit; this report was completed afterward and re-committed separately (the tag stays pinned to the CSV-freezing commit, not this one).
+The two frozen CSV files are identified by Git tag `dataset-frozen-v1`, which points to commit `4f3e11d49ad7ed82e2e84c255be346ad05b5ba92`. The current copies of `frozen_dataset.csv` and `frozen_exploratory.csv` are byte-identical to the versions in that tagged commit. This report was finalized in a later commit; the tag intentionally remains on the commit that froze the dataset.
 
 ## Family counts by core3 class
 
@@ -30,14 +30,16 @@ Tag `dataset-frozen-v1` -> commit `4f3e11d49ad7ed82e2e84c255be346ad05b5ba92`. fr
 
 ## Exclusion reasons (families in neither frozen file)
 
-- **NO_CONSENSUS** (8): at least one of bare/+ba/+ma has no reference-pool majority at all under pool_core3 (tie, 1-1-1 split, or too few cast votes).
-- **EXCLUDE_BROKEN** (2): at least one condition's core3 majority landed on the DISTRACTOR role -- the item failed to activate any of its three target semantics on that condition, so the whole family is excluded even where another condition's numbers would otherwise look like an ordinary gold shift.
+- **NO_CONSENSUS (8):** At least one of the three conditions (bare, +ba, or +ma) did not receive a clear majority label from the core3 annotators. This can happen when the valid votes are split (for example, 1-1-1), tied after an abstention, or too few valid votes remain to form a majority. Because a stable empirical gold label cannot be assigned to every condition, the whole family is excluded.
+- **EXCLUDE_BROKEN (2):** At least one condition received a core3 majority for the DISTRACTOR option rather than for one of the three target semantic roles. This indicates that the item did not work as intended for that condition. Since dataset selection is done at the family level, the whole family is excluded, even if the other conditions in that family are otherwise interpretable.
 
-COLLAPSE_structural under a *different* pool (e.g. pool_econ) that is NO_CONSENSUS or KEEP under core3 is not counted as an exclusion here -- pool_core3 is the pool this freeze decision is based on. See `intermediate_outputs/pool_sensitivity/pool_sensitivity_grid.csv` for the full per-pool picture.
+Only the **core3 classification** is used to decide membership in this dataset freeze. A family may receive a different classification under another annotator pool (for example, `COLLAPSE_structural` under `pool_econ`), but that does not change how it is treated here. Cross-pool differences are reported separately in `intermediate_outputs/pool_sensitivity/pool_sensitivity_grid.csv`.
 
 ## stable_keep_all_pools
 
-11 of the 20 core3-KEEP families are also KEEP under pool_econ, pool_bwl, and pool_all5 (`stable_keep_all_pools=True`). All are still included in `frozen_dataset.csv` -- core3 alone decides membership and gold here -- but the column flags which ones don't survive a different pool. See `intermediate_outputs/pool_sensitivity/core3_keep_dropouts.csv` for which pool(s) disagree on each of the remaining 9.
+Of the 20 families classified as KEEP under core3, 11 are also classified as KEEP under all three alternative annotator pools: `pool_econ`, `pool_bwl`, and `pool_all5`. These families have `stable_keep_all_pools=True`. This variable is a sensitivity indicator, not an inclusion criterion. All 20 core3-KEEP families are included in `frozen_dataset.csv`, for core3 alone determines dataset membership and empirical gold labels for the primary analysis. The `stable_keep_all_pools` column simply shows whether a family would still be classified as KEEP if a different annotator pool were used.
+
+For the remaining 9 families, see `intermediate_outputs/pool_sensitivity/core3_keep_dropouts.csv` for which alternative pool(s) produce a different classification.
 
 ## Confirmatory set (frozen_dataset.csv) consensus-strength distribution
 
@@ -47,13 +49,13 @@ COLLAPSE_structural under a *different* pool (e.g. pool_econ) that is NO_CONSENS
 | 2:0 (unanimous, 1 abstention) | 5 | 8% |
 | 2:1 (majority, all 3 cast) | 17 | 28% |
 
-Computed over all 60 confirmatory items (`margin` column of frozen_dataset.csv), not just the shifted ones -- this is the distribution to slice model performance by later (e.g. "is accuracy lower on the weaker 2:1 items than the unanimous 3:0 ones").
+This distribution is calculated across all 60 confirmatory items using the `margin` column in `frozen_dataset.csv`. It records how strongly the core3 annotators agreed on each empirical gold label. The margin can later be used to check whether model performance differs between items with weaker human agreement (2:1) and items with unanimous agreement (3:0).
 
 ## Gold-shifted items (empirical gold != design gold)
 
-All 7 shifted items fall in the exploratory set; the 60 confirmatory items have empirical gold identical to design gold on every condition (0 confirmatory shifts found).
+All 7 items whose empirical gold differs from the original design gold are in the exploratory set. None of the 60 confirmatory items changed label: for every confirmatory item, the core3 empirical gold matches the original design gold.
 
-**Why shift and collapse are mechanically linked, not just correlated:** design intends each of bare/+ba/+ma to land on its own distinct semantic role. A structural collapse means two of those three conditions' empirical majorities converged onto the *same* label -- and since their design labels were different to begin with, at most one of the two collapsing conditions can still match its own design gold; the other is shifted by construction, not by chance. That accounts for exactly one shift per collapsing family (6 families -> 6 shifts, each landing precisely on the collapsing condition whose own design label differs from the shared majority). F33 additionally shows a second, independent shift on `ma` -- not one of its collapsing conditions (its collapse is `bare=ba`) -- so that seventh shift is a coincidental extra, not a product of the collapse mechanism itself.
+**Why every collapsed family contains at least one gold shift:** The original design assigns a different semantic role to each of the three conditions: bare, +ba, and +ma. In a `COLLAPSE_structural` family, however, two conditions receive the same empirical gold label from the core3 annotators.Those two conditions were originally designed to have different labels, so they cannot both still match their own design gold once they collapse onto the same empirical label. At least one of them must count as a gold shift. This explains 6 of the 7 shifted items: each of the 6 collapsed families contributes one shift associated with its collapsed pair. F33 contains one additional shift. Its structural collapse is between bare and +ba, but its +ma condition also changes from the design gold `neutral` to the empirical gold `confirmation`. This +ma shift is separate from the bare/+ba collapse, which is why F33 contributes two shifted items instead of one.
 
 | family_id | condition | set | design_gold | empirical_gold | margin |
 |---|---|---|---|---|---|
@@ -65,8 +67,9 @@ All 7 shifted items fall in the exploratory set; the 60 confirmatory items have 
 | F33 | ba | exploratory | confirmation | statement | 1 |
 | F33 | ma | exploratory | neutral | confirmation | 1 |
 
-Margin distribution (7 shifted items total): margin=1: 6, margin=3: 1.
-A margin of 1 (2-1 split among 3 cast votes) is the weakest possible majority; treat those shifted golds as the ones most worth a second look, not the ones with a wider margin.
+Margin distribution (7 shifted items total): margin=1: 6, margin=3: 1. 
+
+Among the 7 shifted items, 6 have `margin=1` and 1 has `margin=3`. A margin of 1 means that the empirical gold is based on a 2:1 split among the three core3 annotators, so one annotator preferred a different interpretation. These six shifts have weaker human agreement than the single `margin=3` shift, where all three annotators agreed. The `margin=1` cases are consequently the most useful ones to inspect individually when interpreting the exploratory results.
 
 ## Context-only ablation validation
 
